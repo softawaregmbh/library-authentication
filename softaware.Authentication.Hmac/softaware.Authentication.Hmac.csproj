@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>softaware gmbh</Authors>
+    <Company>softaware gmbh</Company>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+
+</Project>
