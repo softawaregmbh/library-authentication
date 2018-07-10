@@ -83,3 +83,32 @@ services
     .AddHttpClient("HmacHttpClient")
     .AddHttpMessageHandler<ApiKeyDelegatingHandler>();
 ```
+
+## Generate HMAC AppId and ApiKey
+
+To generate an API Key, the following simple Console Application can be used.
+This implementation is also provided on [.NET Fiddle](https://dotnetfiddle.net/hJcYB2).
+
+```csharp
+using System.Security.Cryptography;
+
+public class Program
+{
+    public static void Main()
+    {
+        Console.WriteLine($"AppID: {Guid.NewGuid()} or <some-speaking-name>");
+        Console.WriteLine($"ApiKey: {GenerateApiKey()}");
+    }
+
+    private static string GenerateApiKey()
+    {
+        using (var cryptoProvider = new RNGCryptoServiceProvider())
+        {
+            byte[] secretKeyByteArray = new byte[32]; //256 bit
+            cryptoProvider.GetBytes(secretKeyByteArray);
+            return Convert.ToBase64String(secretKeyByteArray);
+        }
+    }
+}
+
+```
