@@ -5,6 +5,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>softaware gmbh</Authors>
     <Company>softaware gmbh</Company>
+    <Description>A library which adds support for HMAC authentication in ASP.NET Core projects.</Description>
   </PropertyGroup>
 
   <ItemGroup>

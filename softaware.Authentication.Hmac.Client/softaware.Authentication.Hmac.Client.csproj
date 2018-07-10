@@ -5,6 +5,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company>softaware gmbh</Company>
     <Authors>softaware gmbh</Authors>
+    <Description>A client library for HMAC authentication.</Description>
   </PropertyGroup>
 
 </Project>
