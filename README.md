@@ -16,6 +16,19 @@ var hmacAuthenticatedApps = this.Configuration
     .ToDictionary(e => e.AppId, e => e.ApiKey);
 ```
 
+```json
+{
+  "Authentication": {
+    "HmacAuthenticatedApps": [
+        {
+            "AppId": "<some-app-id>",
+            "ApiKey": "<some-api-key>"
+        }
+    ]
+  }
+}
+```
+
 2. Enable HMAC authentication in `Startup.cs` in the `ConfigureServices` method:
 
 ```csharp
