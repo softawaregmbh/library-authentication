@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace softaware.Authentication.Hmac
+﻿namespace softaware.Authentication.Hmac
 {
     public class HmacAuthenticationClientConfiguration
     {

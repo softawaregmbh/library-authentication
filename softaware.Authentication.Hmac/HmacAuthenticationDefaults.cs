@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace softaware.Authentication.Hmac
+﻿namespace softaware.Authentication.Hmac
 {
     public class HmacAuthenticationDefaults
     {

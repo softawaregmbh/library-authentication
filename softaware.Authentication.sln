@@ -3,11 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "softaware.Authentication.Hmac.Client", "softaware.Authentication.Hmac.Client\softaware.Authentication.Hmac.Client.csproj", "{17060DA8-5537-4E82-A04B-6B258BB17670}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "softaware.Authentication.Hmac.Client", "softaware.Authentication.Hmac.Client\softaware.Authentication.Hmac.Client.csproj", "{17060DA8-5537-4E82-A04B-6B258BB17670}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "softaware.Authentication.Hmac.AspNetCore", "softaware.Authentication.Hmac.AspNetCore\softaware.Authentication.Hmac.AspNetCore.csproj", "{84800F97-4CBC-4538-BC1E-13DECA612663}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "softaware.Authentication.Hmac.AspNetCore", "softaware.Authentication.Hmac.AspNetCore\softaware.Authentication.Hmac.AspNetCore.csproj", "{84800F97-4CBC-4538-BC1E-13DECA612663}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "softaware.Authentication.Hmac", "softaware.Authentication.Hmac\softaware.Authentication.Hmac.csproj", "{F4BA794F-7490-4956-8835-C88E91F58956}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "softaware.Authentication.Hmac", "softaware.Authentication.Hmac\softaware.Authentication.Hmac.csproj", "{F4BA794F-7490-4956-8835-C88E91F58956}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "softaware.Authentication.Basic", "softaware.Authentication.Basic\softaware.Authentication.Basic.csproj", "{DAB7DBC3-C9C4-40D1-A27D-998F60094D3D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "softaware.Authentication.Basic.AspNetCore", "softaware.Authentication.Basic.AspNetCore\softaware.Authentication.Basic.AspNetCore.csproj", "{F386B57C-342D-4C41-9CAA-CBA0D9EECE80}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "softaware.Authentication.Basic.Client", "softaware.Authentication.Basic.Client\softaware.Authentication.Basic.Client.csproj", "{2C554FD9-18A5-4F3C-A9B1-A20A45E0D6B6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{596AF5B1-BDC8-4FC4-AEFD-6F722797C379}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "softaware.Authentication.Basic.AspNetCore.Test", "softaware.Authentication.Basic.AspNetCore.Test\softaware.Authentication.Basic.AspNetCore.Test.csproj", "{FDDDFA64-3417-47DC-A33A-769450E18471}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DB1811B1-99EF-4E6B-AC37-6F8CD8D774C6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,9 +39,34 @@ Global
 		{F4BA794F-7490-4956-8835-C88E91F58956}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4BA794F-7490-4956-8835-C88E91F58956}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4BA794F-7490-4956-8835-C88E91F58956}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DAB7DBC3-C9C4-40D1-A27D-998F60094D3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAB7DBC3-C9C4-40D1-A27D-998F60094D3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAB7DBC3-C9C4-40D1-A27D-998F60094D3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAB7DBC3-C9C4-40D1-A27D-998F60094D3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F386B57C-342D-4C41-9CAA-CBA0D9EECE80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F386B57C-342D-4C41-9CAA-CBA0D9EECE80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F386B57C-342D-4C41-9CAA-CBA0D9EECE80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F386B57C-342D-4C41-9CAA-CBA0D9EECE80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C554FD9-18A5-4F3C-A9B1-A20A45E0D6B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C554FD9-18A5-4F3C-A9B1-A20A45E0D6B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C554FD9-18A5-4F3C-A9B1-A20A45E0D6B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C554FD9-18A5-4F3C-A9B1-A20A45E0D6B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDDDFA64-3417-47DC-A33A-769450E18471}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDDDFA64-3417-47DC-A33A-769450E18471}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDDDFA64-3417-47DC-A33A-769450E18471}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDDDFA64-3417-47DC-A33A-769450E18471}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{17060DA8-5537-4E82-A04B-6B258BB17670} = {DB1811B1-99EF-4E6B-AC37-6F8CD8D774C6}
+		{84800F97-4CBC-4538-BC1E-13DECA612663} = {DB1811B1-99EF-4E6B-AC37-6F8CD8D774C6}
+		{F4BA794F-7490-4956-8835-C88E91F58956} = {DB1811B1-99EF-4E6B-AC37-6F8CD8D774C6}
+		{DAB7DBC3-C9C4-40D1-A27D-998F60094D3D} = {DB1811B1-99EF-4E6B-AC37-6F8CD8D774C6}
+		{F386B57C-342D-4C41-9CAA-CBA0D9EECE80} = {DB1811B1-99EF-4E6B-AC37-6F8CD8D774C6}
+		{2C554FD9-18A5-4F3C-A9B1-A20A45E0D6B6} = {DB1811B1-99EF-4E6B-AC37-6F8CD8D774C6}
+		{FDDDFA64-3417-47DC-A33A-769450E18471} = {596AF5B1-BDC8-4FC4-AEFD-6F722797C379}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B85C00FF-1ABE-4846-85DB-EABD95370E37}
