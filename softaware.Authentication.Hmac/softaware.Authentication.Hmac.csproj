@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard1.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>softaware gmbh</Authors>
     <Company>softaware gmbh</Company>
@@ -12,7 +12,7 @@
     <PackageProjectUrl>https://github.com/softawaregmbh/library-authentication</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/softawaregmbh/library-authentication/blob/master/LICENSE</PackageLicenseUrl>
     <Version>1.0.1</Version>
-	<Description>
+	  <Description>
       Core library for HMAC authentication
     </Description>
   </PropertyGroup>
