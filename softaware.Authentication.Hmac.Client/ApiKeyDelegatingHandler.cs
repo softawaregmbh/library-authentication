@@ -16,8 +16,17 @@ namespace softaware.Authentication.Hmac.Client
 
         public ApiKeyDelegatingHandler(string appId, string apiKey)
         {
-            this.appId = appId ?? throw new ArgumentNullException(nameof(appId));
-            this.apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
+            this.appId = !string.IsNullOrWhiteSpace(appId) ? appId : throw new ArgumentNullException(nameof(appId));
+            this.apiKey = !string.IsNullOrWhiteSpace(apiKey) ? apiKey : throw new ArgumentNullException(nameof(apiKey));
+
+            try
+            {
+                Convert.FromBase64String(this.apiKey);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException($"{nameof(apiKey)} must be a valid base64 string.");
+            }
         }
 
         public ApiKeyDelegatingHandler(string appId, string apiKey, HttpMessageHandler innerHandler)

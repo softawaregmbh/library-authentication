@@ -1,13 +1,9 @@
-using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
 using softaware.Authentication.Basic.AspNetCore.AuthorizationProvider;
+using softaware.Authentication.Basic.Client;
 using Xunit;
 
 namespace softaware.Authentication.Basic.AspNetCore.Test
@@ -15,89 +11,72 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
     public class MiddlewareTest
     {
         [Fact]
-        public async Task Request_MemoryProvider_Authorized()
+        public Task Request_MemoryProvider_Authorized()
         {
-            var username = "username";
-            var password = "password";
-
-            using (var client = this.GetHttpClient(new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } })))
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                    "Basic",
-                    Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", username, password))));
-
-                var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-            }
+            return this.TestRequestAsync(
+                new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
+                "username",
+                "password",
+                HttpStatusCode.OK);
         }
 
         [Theory]
         [InlineData("username", "wrongPassword")]
         [InlineData("wrongUsername", "password")]
         [InlineData("wrongUsername", "wrongPassword")]
-        public async Task Request_MemoryProvider_Unauthorized(string username, string password)
+        public Task Request_MemoryProvider_Unauthorized(string username, string password)
         {
-            using (var client = this.GetHttpClient(new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } })))
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                    "Basic",
-                    Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", username, password))));
-
-                var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == System.Net.HttpStatusCode.Unauthorized);
-            }
+            return this.TestRequestAsync(
+                new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
+                username,
+                password,
+                HttpStatusCode.Unauthorized);
         }
 
         [Fact]
-        public async Task Request_SecureMemoryProvider_Authorized()
+        public Task Request_SecureMemoryProvider_Authorized()
         {
-            var username = "username";
-            var password = "password";
-
-            using (var client = this.GetHttpClient(new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } })))
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                    "Basic",
-                    Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", username, password))));
-
-                var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK);
-            }
+            return this.TestRequestAsync(
+                new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
+                "username",
+                "password",
+                HttpStatusCode.OK);
         }
 
         [Theory]
         [InlineData("username", "wrongPassword")]
         [InlineData("wrongUsername", "password")]
         [InlineData("wrongUsername", "wrongPassword")]
-        public async Task Request_SecureMemoryProvider_Unauthorized(string username, string password)
+        public Task Request_SecureMemoryProvider_Unauthorized(string username, string password)
         {
-            using (var client = this.GetHttpClient(new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } })))
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                    "Basic",
-                    Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", username, password))));
+            return this.TestRequestAsync(
+                new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
+                username,
+                password,
+                HttpStatusCode.Unauthorized);
+        }
 
+        private async Task TestRequestAsync(
+            IBasicAuthorizationProvider basicAuthorizationProvider,
+            string username,
+            string password,
+            HttpStatusCode expectedStatusCode)
+        {
+            using (var client = this.GetHttpClient(
+                new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
+                username,
+                password))
+            {
                 var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == System.Net.HttpStatusCode.Unauthorized);
+                Assert.True(response.StatusCode == expectedStatusCode);
             }
         }
 
-        private HttpClient GetHttpClient(IBasicAuthorizationProvider basicAuthorizationProvider)
+        private HttpClient GetHttpClient(
+            IBasicAuthorizationProvider basicAuthorizationProvider, string username, string password)
         {
-            var testServer = new TestServer(new WebHostBuilder()
-                .ConfigureServices(services =>
-            {
-                services.AddAuthentication(o =>
-                {
-                    o.DefaultScheme = BasicAuthenticationDefaults.AuthenticationScheme;
-                })
-                .AddBasicAuthentication(BasicAuthenticationDefaults.AuthenticationScheme, o =>
-                {
-                    o.AuthorizationProvider = basicAuthorizationProvider;
-                });
-            })
-            .UseStartup<TestStartup>());
-            return testServer.CreateClient();
+            var factory = new TestWebApplicationFactory(basicAuthorizationProvider);
+            return factory.CreateDefaultClient(new BasicAuthenticationDelegatingHandler(username, password));
         }
     }
 }

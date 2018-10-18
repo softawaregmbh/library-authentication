@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
@@ -27,10 +26,9 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            var authorization = this.Request.Headers["authorization"];
-            if (string.IsNullOrEmpty(authorization))
+            if (!this.Request.Headers.TryGetValue("Authorization", out var authorization))
             {
-                return AuthenticateResult.Fail("Missing 'authorization' header.");
+                return AuthenticateResult.Fail("Missing 'Authorization' header.");
             }
 
             var valid = await this.ValidateAsync(this.Request);
@@ -47,37 +45,39 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private async Task<bool> ValidateAsync(HttpRequest request)
         {
-            var header = request.Headers["authorization"];
-            var authenticationHeader = AuthenticationHeaderValue.Parse(header);
-            if (this.Options.AuthenticationScheme.Equals(authenticationHeader.Scheme, StringComparison.OrdinalIgnoreCase))
+            if (this.Request.Headers.TryGetValue("Authorization", out var header))
             {
-                var rawAuthenticationHeader = authenticationHeader.Parameter;
-                var authenticationHeaderArray = GetAuthenticationValues(rawAuthenticationHeader);
-
-                if (authenticationHeaderArray != null)
+                var authenticationHeader = AuthenticationHeaderValue.Parse(header);
+                if (this.Options.AuthenticationScheme.Equals(authenticationHeader.Scheme, StringComparison.OrdinalIgnoreCase))
                 {
-                    var appId = authenticationHeaderArray[0];
-                    var incomingBase64Signature = authenticationHeaderArray[1];
-                    var nonce = authenticationHeaderArray[2];
-                    var requestTimeStamp = authenticationHeaderArray[3];
+                    var rawAuthenticationHeader = authenticationHeader.Parameter;
+                    var authenticationHeaderArray = GetAuthenticationValues(rawAuthenticationHeader);
 
-                    // Note that we must not dispose the memoryStream here, because the stream is needed in subsequent handlers
-                    var memoryStream = new MemoryStream();
-
-                    await this.Request.Body.CopyToAsync(memoryStream);
-                    this.Request.Body = memoryStream;
-
-                    try
+                    if (authenticationHeaderArray != null)
                     {
-                        return this.IsValidRequest(request, memoryStream.ToArray(), appId, incomingBase64Signature, nonce, requestTimeStamp);
-                    }
-                    finally
-                    {
-                        // We need to reset the stream so that subsequent handlers have a fresh stream which they can consume.
-                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        var appId = authenticationHeaderArray[0];
+                        var incomingBase64Signature = authenticationHeaderArray[1];
+                        var nonce = authenticationHeaderArray[2];
+                        var requestTimeStamp = authenticationHeaderArray[3];
+
+                        // Note that we must not dispose the memoryStream here, because the stream is needed in subsequent handlers
+                        var memoryStream = new MemoryStream();
+
+                        await this.Request.Body.CopyToAsync(memoryStream);
+                        this.Request.Body = memoryStream;
+
+                        try
+                        {
+                            return this.IsValidRequest(request, memoryStream.ToArray(), appId, incomingBase64Signature, nonce, requestTimeStamp);
+                        }
+                        finally
+                        {
+                            // We need to reset the stream so that subsequent handlers have a fresh stream which they can consume.
+                            memoryStream.Seek(0, SeekOrigin.Begin);
+                        }
                     }
                 }
-            }
+            }  
 
             return false;
         }
