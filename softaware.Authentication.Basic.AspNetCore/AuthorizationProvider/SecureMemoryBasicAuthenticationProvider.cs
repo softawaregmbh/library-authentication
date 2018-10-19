@@ -9,11 +9,16 @@ namespace softaware.Authentication.Basic.AspNetCore.AuthorizationProvider
 {
     public class SecureMemoryBasicAuthenticationProvider : IBasicAuthorizationProvider
     {
-        private readonly IDictionary<string, SecureString> credentials;
+        private readonly IReadOnlyDictionary<string, SecureString> credentials;
 
-        public SecureMemoryBasicAuthenticationProvider(IDictionary<string, string> credentials)
+        public SecureMemoryBasicAuthenticationProvider(IReadOnlyDictionary<string, string> credentials)
         {
             this.credentials = credentials.ToDictionary(c => c.Key, c => this.GetSecuredString(c.Value));
+        }
+
+        public SecureMemoryBasicAuthenticationProvider(IReadOnlyDictionary<string, SecureString> credentials)
+        {
+            this.credentials = credentials.ToDictionary(c => c.Key, c => c.Value);
         }
 
         public Task<bool> IsAuthorizedAsync(string username, string password)

@@ -7,9 +7,9 @@ namespace softaware.Authentication.Basic.AspNetCore.AuthorizationProvider
 {
     public class MemoryBasicAuthenticationProvider : IBasicAuthorizationProvider
     {
-        private readonly IDictionary<string, string> credentials;
+        private readonly IReadOnlyDictionary<string, string> credentials;
 
-        public MemoryBasicAuthenticationProvider(IDictionary<string, string> credentials)
+        public MemoryBasicAuthenticationProvider(IReadOnlyDictionary<string, string> credentials)
         {
             this.credentials = credentials.ToDictionary(c => c.Key, c => c.Value);
         }

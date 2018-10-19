@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -20,9 +21,8 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         }
 
         [Theory]
-        [InlineData("appId", "MNpx/353+rW+sdf/RFDAv/615u5w=")]
+        [InlineData("appId", "YXJld3JzZHJkc2FhcndlZQ==")]
         [InlineData("wrongAppId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=")]
-        [InlineData("wrongAppId", "MNpx/353+rW+sdf/RFDAv/615u5w=")]
         public Task Request_Unauthorized(string appId, string apiKey)
         {
             return this.TestRequestAsync(
@@ -30,6 +30,18 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 appId,
                 apiKey,
                 HttpStatusCode.Unauthorized);
+        }
+
+        [Theory]
+        [InlineData("appId", "MNpx/353+rW+sdf/RFDAv/615u5w=")]
+        [InlineData("wrongAppId", "MNpx/353+rW+sdf/RFDAv/615u5w=")]
+        public Task Request_ApiKeyBadFormat_ThrowsException(string appId, string apiKey)
+        {
+            return Assert.ThrowsAsync<ArgumentException>(() => this.TestRequestAsync(
+                new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                appId,
+                apiKey,
+                HttpStatusCode.Unauthorized));
         }
 
         private async Task TestRequestAsync(
