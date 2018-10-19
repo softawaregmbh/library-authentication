@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- This project will output netstandard2.0 and net461 assemblies -->
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company>softaware gmbh</Company>
     <Authors>softaware gmbh</Authors>
