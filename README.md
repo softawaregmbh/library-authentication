@@ -1,6 +1,20 @@
-# softaware.Authentication.Hmac
+# softaware.Authentication
 
-## softaware.Authentication.Hmac.AspNetCore
+<!-- TOC -->
+
+  - [softaware.Authentication.Hmac](#softawareauthenticationhmac)
+      - [softaware.Authentication.Hmac.AspNetCore](#softawareauthenticationhmacaspnetcore)
+      - [softaware.Authentication.Hmac.Client](#softawareauthenticationhmacclient)
+      - [Generate HMAC AppId and ApiKey](#generate-hmac-appid-and-apikey)
+  - [softaware.Authentication.Basic](#softawareauthenticationbasic)
+      - [softaware.Authentication.Basic.AspNetCore](#softawareauthenticationbasicaspnetcore)
+      - [softaware.Authentication.Basic.Client](#softawareauthenticationbasicclient)
+
+<!-- /TOC -->
+
+## softaware.Authentication.Hmac
+
+### softaware.Authentication.Hmac.AspNetCore
 
 Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1?view=aspnetcore-2.1) which supports [HMAC](https://en.wikipedia.org/wiki/HMAC) authentication in an ASP.NET Core project.
 
@@ -33,6 +47,10 @@ var hmacAuthenticatedApps = this.Configuration
 
 ```csharp
 services
+    .AddAuthentication(o =>
+    {
+        o.DefaultScheme = HmacAuthenticationDefaults.AuthenticationScheme;
+    })
     .AddHmacAuthentication(HmacAuthenticationDefaults.AuthenticationScheme, "HMAC Authentication", o =>
     {
         o.MaxRequestAgeInSeconds = HmacAuthenticationDefaults.MaxRequestAgeInSeconds;
@@ -64,11 +82,12 @@ public class HomeController : Controller
 }
 ```
 
-## softaware.Authentication.Hmac.Client
+### softaware.Authentication.Hmac.Client
 
 Provides a `DelegatingHandler` for adding an HMAC authorization header to HTTP requests.
 
-Instantiate your HttpClient instance with the `ApiKeyDelegatingHandler`:
+Instantiate your `HttpClient` instance with the `ApiKeyDelegatingHandler`.
+Make sure, that you don't create new `HttpClient` instances for every request (see also [this blog post](https://aspnetmonsters.com/2016/08/2016-08-27-httpclientwrong/) for details):
 
 ```csharp
 new HttpClient(new ApiKeyDelegatingHandler(appId, apiKey));
@@ -84,7 +103,7 @@ services
     .AddHttpMessageHandler<ApiKeyDelegatingHandler>();
 ```
 
-## Generate HMAC AppId and ApiKey
+### Generate HMAC AppId and ApiKey
 
 To generate an API Key, the following simple Console Application can be used.
 This implementation is also provided on [.NET Fiddle](https://dotnetfiddle.net/hJcYB2).
@@ -111,4 +130,34 @@ public class Program
     }
 }
 
+```
+
+## softaware.Authentication.Basic
+
+### softaware.Authentication.Basic.AspNetCore
+
+Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1?view=aspnetcore-2.1) which supports [Basic](https://en.wikipedia.org/wiki/Basic_access_authentication) authentication in an ASP.NET Core project.
+
+Enable Basic authentication in `Startup.cs` in the `ConfigureServices` method:
+
+```csharp
+services.AddAuthentication(o =>
+    {
+        o.DefaultScheme = BasicAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddBasicAuthentication(BasicAuthenticationDefaults.AuthenticationScheme, o =>
+    {
+        o.AuthorizationProvider = new MemoryBasicAuthenticationProvider(authenticatedApps);
+    });
+```
+
+### softaware.Authentication.Basic.Client
+
+Provides a `DelegatingHandler` for adding an HMAC authorization header to HTTP requests.
+
+Instantiate your `HttpClient` instance with the `BasicAuthenticationDelegatingHandler`.
+Make sure, that you don't create new `HttpClient` instances for every request (see also [this blog post](https://aspnetmonsters.com/2016/08/2016-08-27-httpclientwrong/) for details):
+
+```csharp
+new HttpClient(new BasicAuthenticationDelegatingHandler(username, password));
 ```
