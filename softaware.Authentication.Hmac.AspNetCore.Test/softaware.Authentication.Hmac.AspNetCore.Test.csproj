@@ -5,6 +5,7 @@
     <TargetFrameworks>netcoreapp2.1;net461</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
