@@ -92,7 +92,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                         req.PathBase.ToUriComponent(),
                         req.Path.ToUriComponent(),
                         req.QueryString.ToUriComponent());
-            var requestUri = WebUtility.UrlEncode(absoluteUri.ToLower());
+            var requestUri = Uri.EscapeDataString(Uri.UnescapeDataString(absoluteUri.ToLower()));
             var requestHttpMethod = req.Method;
 
             if (!this.Options.HmacAuthenticatedApps.TryGetValue(appId, out var apiKey))

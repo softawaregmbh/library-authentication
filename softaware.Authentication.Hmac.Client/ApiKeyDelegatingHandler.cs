@@ -40,7 +40,7 @@ namespace softaware.Authentication.Hmac.Client
         {
             var requestContentBase64String = string.Empty;
 
-            var requestUri = WebUtility.UrlEncode(request.RequestUri.AbsoluteUri.ToLower());
+            var requestUri = Uri.EscapeDataString(Uri.UnescapeDataString(request.RequestUri.AbsoluteUri.ToLower()));
 
             var requestHttpMethod = request.Method.Method;
 

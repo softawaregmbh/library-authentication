@@ -10,14 +10,20 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
 {
     public class MiddlewareTest
     {
-        [Fact]
-        public Task Request_Authorized()
+        [Theory]
+        [InlineData("api/test")]
+        [InlineData("api/test?query=test")]
+        [InlineData("api/test?query=test test")]
+        [InlineData("api/test?query=test+test")]
+        [InlineData("api/test?query=test%20test")]
+        public Task Request_Authorized(string requestUri)
         {
             return this.TestRequestAsync(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 "appId",
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
-                HttpStatusCode.OK);
+                HttpStatusCode.OK,
+                requestUri);
         }
 
         [Theory]
@@ -48,14 +54,15 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             IDictionary<string, string> authenticatedApps,
             string appId,
             string apiKey,
-            HttpStatusCode expectedStatusCode)
+            HttpStatusCode expectedStatusCode,
+            string requestUri = "api/test")
         {
             using (var client = this.GetHttpClient(
                 authenticatedApps,
                 appId,
                 apiKey))
             {
-                var response = await client.GetAsync("api/test");
+                var response = await client.GetAsync(requestUri);
                 Assert.True(response.StatusCode == expectedStatusCode);
             }
         }

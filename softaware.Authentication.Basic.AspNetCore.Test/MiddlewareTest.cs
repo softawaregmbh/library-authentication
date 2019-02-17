@@ -10,14 +10,20 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
 {
     public class MiddlewareTest
     {
-        [Fact]
-        public Task Request_MemoryProvider_Authorized()
+        [Theory]
+        [InlineData("api/test")]
+        [InlineData("api/test?query=test")]
+        [InlineData("api/test?query=test test")]
+        [InlineData("api/test?query=test+test")]
+        [InlineData("api/test?query=test%20test")]
+        public Task Request_MemoryProvider_Authorized(string requestUri)
         {
             return this.TestRequestAsync(
                 new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 "username",
                 "password",
-                HttpStatusCode.OK);
+                HttpStatusCode.OK,
+                requestUri);
         }
 
         [Theory]
@@ -60,14 +66,15 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
             IBasicAuthorizationProvider basicAuthorizationProvider,
             string username,
             string password,
-            HttpStatusCode expectedStatusCode)
+            HttpStatusCode expectedStatusCode,
+            string requestUri = "api/test")
         {
             using (var client = this.GetHttpClient(
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 username,
                 password))
             {
-                var response = await client.GetAsync("api/test");
+                var response = await client.GetAsync(requestUri);
                 Assert.True(response.StatusCode == expectedStatusCode);
             }
         }
