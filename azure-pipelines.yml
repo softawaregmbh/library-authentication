@@ -16,12 +16,18 @@ steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
 
-- script: dotnet test --configuration $(buildConfiguration)
+- script: dotnet test --configuration $(buildConfiguration) --logger trx
   displayName: 'dotnet test $(buildConfiguration)'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: XUnit
+    testResultsFiles: '**/*.trx'
 
 - task: CopyFiles@2
   inputs:
     TargetFolder: $(Build.ArtifactStagingDirectory)
     Contents: '**/*.nupkg'
+    flattenFolders: true
 
 - task: PublishBuildArtifacts@1
