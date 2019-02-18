@@ -21,7 +21,7 @@ steps:
 
 - task: PublishTestResults@2
   inputs:
-    testResultsFormat: XUnit
+    testResultsFormat: VSTest
     testResultsFiles: '**/*.trx'
 
 - task: CopyFiles@2
