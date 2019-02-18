@@ -20,6 +20,7 @@ steps:
   displayName: 'dotnet test $(buildConfiguration)'
 
 - task: PublishTestResults@2
+  condition: succeededOrFailed()
   inputs:
     testResultsFormat: VSTest
     testResultsFiles: '**/*.trx'
