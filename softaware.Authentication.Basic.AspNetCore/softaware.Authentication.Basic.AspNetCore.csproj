@@ -2,22 +2,22 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     
-    <Version>1.1.0</Version>
+    <Version>3.0.0</Version>
     <PackageProjectUrl>https://github.com/softawaregmbh/library-authentication</PackageProjectUrl>
     <RepositoryUrl>https://github.com/softawaregmbh/library-authentication</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>softaware, Authentication, Basic, AspNetCore, AspNet</PackageTags>
+    <PackageTags>softaware, Authentication, Basic, AspNetCore</PackageTags>
     <Company>softaware gmbh</Company>
     <Authors>softaware gmbh</Authors>
-    <PackageLicenseUrl>https://github.com/softawaregmbh/library-authentication/blob/master/LICENSE</PackageLicenseUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageIconUrl>https://secure.gravatar.com/avatar/d441f5a5514d2afce7da518a89f028d0?s=512&amp;r=g&amp;d=retro</PackageIconUrl>
-    <Description>
-      A library which adds support for Basic authentication in ASP.NET Core projects.
-    </Description>
+    <Description>A library which adds support for Basic authentication in ASP.NET Core projects.</Description>
+    <PackageIcon>package-icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <PackageReleaseNotes>This release adds support for .NET Core 3.1 and drops the support for .NET 4.6.2. If you want to support .NET Core 2.2 or .NET 4.6.2 use the previous version of this package.</PackageReleaseNotes>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
@@ -32,6 +32,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\Assets\package-icon.png" Link="package-icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 
   <ItemGroup>
