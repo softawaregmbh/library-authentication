@@ -91,6 +91,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
             var contentAsString = await result.Content.ReadAsStringAsync();
             dynamic content = JArray.Parse(contentAsString);
 
+            Assert.Equal(1, content.Count);
             Assert.Equal(ClaimTypes.NameIdentifier, content[0].name.Value);
             Assert.Equal(username, content[0].value.Value);
         }
