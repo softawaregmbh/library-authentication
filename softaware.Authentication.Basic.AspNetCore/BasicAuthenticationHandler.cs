@@ -15,6 +15,16 @@ namespace softaware.Authentication.Hmac.AspNetCore
 {
     internal class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticationSchemeOptions>
     {
+        private class ValidationResult
+        {
+            public bool Valid { get; set; }
+
+            /// <summary>
+            /// Only valid if <see cref="Valid"/> is true.
+            /// </summary>
+            public string Username { get; set; }
+        }
+
         public BasicAuthenticationHandler(IOptionsMonitor<BasicAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
             : base(options, logger, encoder, clock)
         {
@@ -37,11 +47,13 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return AuthenticateResult.Fail("'Authorization' header MUST start with 'Basic'.");
             }
 
-            var valid = await this.ValidateAsync(this.Request);
+            var validationResult = await this.ValidateAsync(this.Request);
 
-            if (valid)
+            if (validationResult.Valid)
             {
-                var principal = new ClaimsPrincipal(new ClaimsIdentity(BasicAuthenticationDefaults.AuthenticationType));
+                var claimsToSet = new Claim[] { new Claim(ClaimTypes.NameIdentifier, validationResult.Username) };
+
+                var principal = new ClaimsPrincipal(new ClaimsIdentity(claimsToSet, BasicAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role));
                 var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), this.Options.AuthenticationScheme);
                 return AuthenticateResult.Success(ticket);
             }
@@ -49,8 +61,10 @@ namespace softaware.Authentication.Hmac.AspNetCore
             return AuthenticateResult.Fail("Authentication failed");
         }
 
-        private async Task<bool> ValidateAsync(HttpRequest request)
+        private async Task<ValidationResult> ValidateAsync(HttpRequest request)
         {
+            var result = new ValidationResult();
+
             if (this.Request.Headers.TryGetValue("Authorization", out var header)) {
                 var authenticationHeader = AuthenticationHeaderValue.Parse(header);
                 if (this.Options.AuthenticationScheme.Equals(authenticationHeader.Scheme, StringComparison.OrdinalIgnoreCase))
@@ -61,14 +75,15 @@ namespace softaware.Authentication.Hmac.AspNetCore
                     var splittedUsernamePassword = decodedUsernamePassword.Split(':');
                     if (splittedUsernamePassword.Length != 2) // username and password must set
                     {
-                        return false;
+                        return result;
                     }
 
-                    return await this.Options.AuthorizationProvider.IsAuthorizedAsync(splittedUsernamePassword[0], splittedUsernamePassword[1]);
+                    result.Valid = await this.Options.AuthorizationProvider.IsAuthorizedAsync(splittedUsernamePassword[0], splittedUsernamePassword[1]);
+                    result.Username = splittedUsernamePassword[0];
                 }
             }
 
-            return false;
+            return result;
         }
     }
 }
