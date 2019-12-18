@@ -17,6 +17,16 @@ namespace softaware.Authentication.Hmac.AspNetCore
 {
     internal class HmacAuthenticationHandler : AuthenticationHandler<HmacAuthenticationSchemeOptions>
     {
+        private class ValidationResult
+        {
+            public bool Valid { get; set; }
+
+            /// <summary>
+            /// Only valid if <see cref="Valid"/> is true.
+            /// </summary>
+            public string Username { get; set; }
+        }
+
         private readonly IMemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions());
 
         public HmacAuthenticationHandler(IOptionsMonitor<HmacAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
@@ -31,11 +41,13 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return AuthenticateResult.Fail("Missing 'Authorization' header.");
             }
 
-            var valid = await this.ValidateAsync(this.Request);
+            var validationResult = await this.ValidateAsync(this.Request);
 
-            if (valid)
+            if (validationResult.Valid)
             {
-                var principal = new ClaimsPrincipal(new ClaimsIdentity(HmacAuthenticationDefaults.AuthenticationType));
+                var claimsToSet = new Claim[] { new Claim(ClaimTypes.NameIdentifier, validationResult.Username) };
+
+                var principal = new ClaimsPrincipal(new ClaimsIdentity(claimsToSet, HmacAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role));
                 var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), this.Options.AuthenticationScheme);
                 return AuthenticateResult.Success(ticket);
             }
@@ -43,8 +55,10 @@ namespace softaware.Authentication.Hmac.AspNetCore
             return AuthenticateResult.Fail("Authentication failed");
         }
 
-        private async Task<bool> ValidateAsync(HttpRequest request)
+        private async Task<ValidationResult> ValidateAsync(HttpRequest request)
         {
+            var result = new ValidationResult();
+
             if (this.Request.Headers.TryGetValue("Authorization", out var header))
             {
                 var authenticationHeader = AuthenticationHeaderValue.Parse(header);
@@ -68,7 +82,8 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
                         try
                         {
-                            return this.IsValidRequest(request, memoryStream.ToArray(), appId, incomingBase64Signature, nonce, requestTimeStamp);
+                            result.Valid = this.IsValidRequest(request, memoryStream.ToArray(), appId, incomingBase64Signature, nonce, requestTimeStamp);
+                            result.Username = appId;
                         }
                         finally
                         {
@@ -79,7 +94,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 }
             }  
 
-            return false;
+            return result;
         }
 
         private bool IsValidRequest(HttpRequest req, byte[] body, string appId, string incomingBase64Signature, string nonce, string requestTimeStamp)
