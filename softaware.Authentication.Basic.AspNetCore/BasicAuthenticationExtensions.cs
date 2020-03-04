@@ -9,10 +9,10 @@ namespace softaware.Authentication.Basic.AspNetCore
 {
     public static class BasicAuthenticationExtensions
     {
-        public static AuthenticationBuilder AddJwtBearer(this AuthenticationBuilder builder)
+        public static AuthenticationBuilder AddBasicAuthentication(this AuthenticationBuilder builder)
             => builder.AddBasicAuthentication(BasicAuthenticationDefaults.AuthenticationScheme, _ => { });
 
-        public static AuthenticationBuilder AddJwtBearer(this AuthenticationBuilder builder, Action<BasicAuthenticationSchemeOptions> configureOptions)
+        public static AuthenticationBuilder AddBasicAuthentication(this AuthenticationBuilder builder, Action<BasicAuthenticationSchemeOptions> configureOptions)
             => builder.AddBasicAuthentication(BasicAuthenticationDefaults.AuthenticationScheme, configureOptions);
 
         public static AuthenticationBuilder AddBasicAuthentication(this AuthenticationBuilder builder, string authenticationScheme, Action<BasicAuthenticationSchemeOptions> configureOptions)

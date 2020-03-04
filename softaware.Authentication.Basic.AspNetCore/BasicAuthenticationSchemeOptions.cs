@@ -15,6 +15,12 @@ namespace softaware.Authentication.Basic.AspNetCore
         /// </summary>
         public bool AddPasswordAsClaim { get; set; }
 
+        /// <summary>
+        /// Define password claim type if it will be added.
+        /// <para/>Default - <see cref="BasicAuthenticationDefaults.PasswordClaimType" />
+        /// </summary>
+        public string PasswordClaimType { get; set; } = BasicAuthenticationDefaults.PasswordClaimType;
+
         public BasicAuthenticationSchemeOptions()
         {
             this.AuthenticationScheme = BasicAuthenticationDefaults.AuthenticationScheme;

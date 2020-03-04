@@ -58,7 +58,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
                 if (this.Options.AddPasswordAsClaim)
                 {
-                    claimsToSet.Add(new Claim("Password", validationResult.Password));
+                    claimsToSet.Add(new Claim(this.Options.PasswordClaimType, validationResult.Password));
                 }
 
                 var principal = new ClaimsPrincipal(new ClaimsIdentity(claimsToSet, BasicAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role));
