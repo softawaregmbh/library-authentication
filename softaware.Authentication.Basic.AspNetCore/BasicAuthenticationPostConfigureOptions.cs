@@ -7,7 +7,7 @@ namespace softaware.Authentication.Basic.AspNetCore
     {
         private readonly IBasicAuthorizationProvider basicAuthorizationProvider;
 
-        public BasicAuthenticationPostConfigureOptions(IBasicAuthorizationProvider basicAuthorizationProvider)
+        public BasicAuthenticationPostConfigureOptions(IBasicAuthorizationProvider basicAuthorizationProvider = null)
         {
             this.basicAuthorizationProvider = basicAuthorizationProvider;
         }
