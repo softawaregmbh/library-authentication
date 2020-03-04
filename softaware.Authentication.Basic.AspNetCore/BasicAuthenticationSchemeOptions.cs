@@ -6,11 +6,24 @@ namespace softaware.Authentication.Basic.AspNetCore
     public class BasicAuthenticationSchemeOptions : AuthenticationSchemeOptions
     {
         public string AuthenticationScheme { get; set; }
+
         public IBasicAuthorizationProvider AuthorizationProvider { get; set; }
+
+        /// <summary>
+        /// Add password as claim after successfull authentication
+        /// Security risks should be weighed up.
+        /// </summary>
+        public bool AddPasswordAsClaim { get; set; }
 
         public BasicAuthenticationSchemeOptions()
         {
             this.AuthenticationScheme = BasicAuthenticationDefaults.AuthenticationScheme;
+        }
+
+        public BasicAuthenticationSchemeOptions(IBasicAuthorizationProvider basicAuthorizationProvider)
+        {
+            this.AuthenticationScheme = BasicAuthenticationDefaults.AuthenticationScheme;
+            this.AuthorizationProvider = basicAuthorizationProvider;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
@@ -19,10 +20,9 @@ namespace softaware.Authentication.Hmac.AspNetCore
         {
             public bool Valid { get; set; }
 
-            /// <summary>
-            /// Only valid if <see cref="Valid"/> is true.
-            /// </summary>
             public string Username { get; set; }
+
+            public string Password { get; set; }
         }
 
         public BasicAuthenticationHandler(IOptionsMonitor<BasicAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
@@ -34,7 +34,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
         {
             if (this.Options.AuthorizationProvider == null)
             {
-                throw new ArgumentException($"{this.Options.AuthorizationProvider} is absolutely necessary.");
+                throw new ArgumentException($"{nameof(this.Options.AuthorizationProvider)} is absolutely necessary.");
             }
 
             if (!this.Request.Headers.TryGetValue("Authorization", out var authorization))
@@ -51,7 +51,15 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             if (validationResult.Valid)
             {
-                var claimsToSet = new Claim[] { new Claim(ClaimTypes.NameIdentifier, validationResult.Username) };
+                var claimsToSet = new List<Claim> 
+                { 
+                    new Claim(ClaimTypes.NameIdentifier, validationResult.Username) 
+                };
+
+                if (this.Options.AddPasswordAsClaim)
+                {
+                    claimsToSet.Add(new Claim("Password", validationResult.Password));
+                }
 
                 var principal = new ClaimsPrincipal(new ClaimsIdentity(claimsToSet, BasicAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role));
                 var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), this.Options.AuthenticationScheme);
@@ -80,6 +88,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
                     result.Valid = await this.Options.AuthorizationProvider.IsAuthorizedAsync(splittedUsernamePassword[0], splittedUsernamePassword[1]);
                     result.Username = splittedUsernamePassword[0];
+                    result.Password = splittedUsernamePassword[1];
                 }
             }
 
