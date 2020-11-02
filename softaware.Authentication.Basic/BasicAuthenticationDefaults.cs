@@ -5,5 +5,6 @@
         public const string AuthenticationScheme = "Basic";
         public const string AuthenticationType = "Basic";
         public const string PasswordClaimType = "Password";
+        public const string TokenClaimType = "Token";
     }
 }

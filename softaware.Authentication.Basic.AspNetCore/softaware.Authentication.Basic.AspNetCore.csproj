@@ -3,7 +3,7 @@
     <!-- This project will output netstandard2.0 and net461 assemblies -->
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     
-    <Version>3.2.0</Version>
+    <Version>3.3.0</Version>
     <PackageProjectUrl>https://github.com/softawaregmbh/library-authentication</PackageProjectUrl>
     <RepositoryUrl>https://github.com/softawaregmbh/library-authentication</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -17,7 +17,7 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <PackageReleaseNotes>Add IPostConfigureOptions to support DI for IBasicAuthorizationProvider</PackageReleaseNotes>
+    <PackageReleaseNotes>Add token (authorization header) to claims depending on options</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">

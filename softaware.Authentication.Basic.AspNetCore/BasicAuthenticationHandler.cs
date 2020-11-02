@@ -23,6 +23,8 @@ namespace softaware.Authentication.Hmac.AspNetCore
             public string Username { get; set; }
 
             public string Password { get; set; }
+
+            public string Token { get; set; }
         }
 
         public BasicAuthenticationHandler(IOptionsMonitor<BasicAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
@@ -61,6 +63,11 @@ namespace softaware.Authentication.Hmac.AspNetCore
                     claimsToSet.Add(new Claim(this.Options.PasswordClaimType, validationResult.Password));
                 }
 
+                if (this.Options.AddTokenAsClaim)
+                {
+                    claimsToSet.Add(new Claim(this.Options.TokenClaimType, validationResult.Token));
+                }
+
                 var principal = new ClaimsPrincipal(new ClaimsIdentity(claimsToSet, BasicAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role));
                 var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), this.Options.AuthenticationScheme);
                 return AuthenticateResult.Success(ticket);
@@ -89,6 +96,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                     result.Valid = await this.Options.AuthorizationProvider.IsAuthorizedAsync(splittedUsernamePassword[0], splittedUsernamePassword[1]);
                     result.Username = splittedUsernamePassword[0];
                     result.Password = splittedUsernamePassword[1];
+                    result.Token = authenticationHeader.Parameter;
                 }
             }
 

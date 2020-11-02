@@ -21,6 +21,17 @@ namespace softaware.Authentication.Basic.AspNetCore
         /// </summary>
         public string PasswordClaimType { get; set; } = BasicAuthenticationDefaults.PasswordClaimType;
 
+        /// <summary>
+        /// Add token as claim after successfull authentication
+        /// </summary>
+        public bool AddTokenAsClaim { get; set; }
+
+        /// <summary>
+        /// Define token claim type if it will be added.
+        /// <para/>Default - <see cref="BasicAuthenticationDefaults.TokenClaimType" />
+        /// </summary>
+        public string TokenClaimType { get; set; } = BasicAuthenticationDefaults.TokenClaimType;
+
         public BasicAuthenticationSchemeOptions()
         {
             this.AuthenticationScheme = BasicAuthenticationDefaults.AuthenticationScheme;
