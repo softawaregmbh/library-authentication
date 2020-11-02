@@ -8,10 +8,12 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
     public class TestWebApplicationFactory : WebApplicationFactory<TestStartup>
     {
         private readonly IBasicAuthorizationProvider basicAuthorizationProvider;
+        private readonly BasicAuthenticationSchemeOptions basicAuthenticationSchemeOptions;
 
-        public TestWebApplicationFactory(IBasicAuthorizationProvider basicAuthorizationProvider)
+        public TestWebApplicationFactory(IBasicAuthorizationProvider basicAuthorizationProvider, BasicAuthenticationSchemeOptions basicAuthenticationSchemeOptions = null)
         {
             this.basicAuthorizationProvider = basicAuthorizationProvider;
+            this.basicAuthenticationSchemeOptions = basicAuthenticationSchemeOptions;
         }
 
         protected override IWebHostBuilder CreateWebHostBuilder()
@@ -23,13 +25,18 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         {
             builder.ConfigureServices(services =>
             {
-                services.AddTransient(_ => this.basicAuthorizationProvider);
+                services.AddTransient((_) => this.basicAuthorizationProvider);
 
                 services.AddAuthentication(o =>
                 {
                     o.DefaultScheme = BasicAuthenticationDefaults.AuthenticationScheme;
                 })
-                .AddBasicAuthentication();
+                .AddBasicAuthentication(BasicAuthenticationDefaults.AuthenticationScheme, o =>
+                {
+                    o.AuthorizationProvider = this.basicAuthorizationProvider;
+                    o.AddPasswordAsClaim = basicAuthenticationSchemeOptions?.AddPasswordAsClaim ?? false;
+                    o.AddTokenAsClaim = basicAuthenticationSchemeOptions?.AddTokenAsClaim ?? false;
+                });
             });
         }
     }

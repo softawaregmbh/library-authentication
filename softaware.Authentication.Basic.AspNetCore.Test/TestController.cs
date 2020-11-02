@@ -22,7 +22,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Route("Claims")]
         public ActionResult GetClaims()
         {
-            return this.Ok(this.User.Claims.Select(p => new { Name = p.Type, Value = p.Value }));
+            return this.Ok(this.User.Claims.Select(p => new { Name = p.Type, p.Value }));
         }
     }
 }
