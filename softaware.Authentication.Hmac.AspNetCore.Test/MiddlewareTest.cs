@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using softaware.Authentication.Hmac.AuthorizationProvider;
 using softaware.Authentication.Hmac.Client;
 using Xunit;
 
@@ -20,6 +21,32 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 "appId",
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
                 HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public async Task Request_WithDeprecatedHmacAuthorizedAppsOption_Authorized()
+        {
+            using (var client = this.GetHttpClientWithHmacAutenticatedAppsOption(
+                new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                "appId",
+                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
+            {
+                var response = await client.GetAsync("api/test");
+                Assert.True(response.StatusCode == HttpStatusCode.OK);
+            }
+        }
+
+        [Fact]
+        public async Task Request_WithDefaultAuthorizationProvider_Authorized()
+        {
+            using (var client = this.GetHttpClientWithDefaultAuthorizationProvider(
+                new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                "appId",
+                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
+            {
+                var response = await client.GetAsync("api/test");
+                Assert.True(response.StatusCode == HttpStatusCode.OK);
+            }
         }
 
         [Theory]
@@ -104,7 +131,25 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
 
         private HttpClient GetHttpClient(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
         {
-            var factory = new TestWebApplicationFactory(hmacAuthenticatedApps);
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
+            });
+            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
+        }
+
+        private HttpClient GetHttpClientWithHmacAutenticatedAppsOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
+        {
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.HmacAuthenticatedApps = hmacAuthenticatedApps;
+            });
+            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
+        }
+
+        private HttpClient GetHttpClientWithDefaultAuthorizationProvider(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
+        {
+            var factory = new TestWebApplicationFactoryWithDefaultAuthorizationProvider(hmacAuthenticatedApps);
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
     }

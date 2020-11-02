@@ -36,6 +36,11 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (this.Options.AuthorizationProvider == null)
+            {
+                throw new ArgumentException($"{nameof(this.Options.AuthorizationProvider)} in the options is absolutely necessary.");
+            }
+
             if (!this.Request.Headers.TryGetValue("Authorization", out var authorization))
             {
                 return AuthenticateResult.Fail("Missing 'Authorization' header.");
@@ -82,7 +87,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
                         try
                         {
-                            result.Valid = this.IsValidRequest(request, memoryStream.ToArray(), appId, incomingBase64Signature, nonce, requestTimeStamp);
+                            result.Valid = await this.IsValidRequestAsync(request, memoryStream.ToArray(), appId, incomingBase64Signature, nonce, requestTimeStamp);
                             result.Username = appId;
                         }
                         finally
@@ -92,12 +97,12 @@ namespace softaware.Authentication.Hmac.AspNetCore
                         }
                     }
                 }
-            }  
+            }
 
             return result;
         }
 
-        private bool IsValidRequest(HttpRequest req, byte[] body, string appId, string incomingBase64Signature, string nonce, string requestTimeStamp)
+        private async Task<bool> IsValidRequestAsync(HttpRequest req, byte[] body, string appId, string incomingBase64Signature, string nonce, string requestTimeStamp)
         {
             var requestContentBase64String = string.Empty;
             var absoluteUri = string.Concat(
@@ -110,7 +115,9 @@ namespace softaware.Authentication.Hmac.AspNetCore
             var requestUri = WebUtility.UrlEncode(absoluteUri.ToLower());
             var requestHttpMethod = req.Method;
 
-            if (!this.Options.HmacAuthenticatedApps.TryGetValue(appId, out var apiKey))
+            var authorizationProviderResult = await this.Options.AuthorizationProvider.TryGetApiKeyAsync(appId);
+
+            if (!authorizationProviderResult.Found)
             {
                 return false;
             }
@@ -129,7 +136,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             var data = $"{appId}{requestHttpMethod}{requestUri}{requestTimeStamp}{nonce}{requestContentBase64String}";
 
-            var apiKeyBytes = Convert.FromBase64String(apiKey);
+            var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
 
             var signature = Encoding.UTF8.GetBytes(data);
 
