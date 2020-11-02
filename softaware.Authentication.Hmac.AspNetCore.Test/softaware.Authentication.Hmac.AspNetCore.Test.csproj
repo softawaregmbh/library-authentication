@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\softaware.Authentication.Hmac.AspNetCore\softaware.Authentication.Hmac.AspNetCore.csproj" />
     <ProjectReference Include="..\softaware.Authentication.Hmac.Client\softaware.Authentication.Hmac.Client.csproj" />
+    <ProjectReference Include="..\softaware.Authentication.Hmac\softaware.Authentication.Hmac.csproj" />
   </ItemGroup>
 
 </Project>

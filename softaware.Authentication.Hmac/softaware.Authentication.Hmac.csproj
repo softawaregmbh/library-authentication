@@ -11,7 +11,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>softaware, authentication, HMAC</PackageTags>
     <PackageProjectUrl>https://github.com/softawaregmbh/library-authentication</PackageProjectUrl>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
 	  <Description>Core library for HMAC authentication</Description>
     <PackageIcon>package-icon.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
