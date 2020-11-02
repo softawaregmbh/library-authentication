@@ -20,67 +20,69 @@ Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/ap
 
 Usage:
 
-1. Get your HMAC authenticated clients, for example from the `appsettings.json` file. For HMAC authentication, an `AppId` and an `ApiKey` is required for each client which should get access.
+1. Register an implementation of `IHmacAuthorizationProvider` in `Startup.cs`. Either use the built-in `MemoryHmacAuthenticationProvider` for in-memory HMAC app configuration or implement your own `IHmacAuthorizationProvider` to provide HMAC apps.
+   
+    ```csharp
+    services.AddTransient<IHmacAuthorizationProvider>(_ => new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps));
+    ```
 
-```csharp
-var hmacAuthenticatedApps = this.Configuration
-    .GetSection("Authentication")
-    .GetSection("HmacAuthenticatedApps")
-    .Get<HmacAuthenticationClientConfiguration[]>()
-    .ToDictionary(e => e.AppId, e => e.ApiKey);
-```
+2. When using the built-in `MemoryHmacAuthenticationProvider`, get your HMAC authenticated clients, for example from the `appsettings.json` file. For HMAC authentication, an `AppId` and an `ApiKey` is required for each client which should get access.
 
-```json
-{
-  "Authentication": {
-    "HmacAuthenticatedApps": [
+    ```json
+    {
+      "Authentication": {
+        "HmacAuthenticatedApps": [
+            {
+                "AppId": "<some-app-id>",
+                "ApiKey": "<some-api-key>"
+            }
+        ]
+      }
+    }
+    ```
+
+    ```csharp
+    var hmacAuthenticatedApps = this.Configuration
+        .GetSection("Authentication")
+        .GetSection("HmacAuthenticatedApps")
+        .Get<HmacAuthenticationClientConfiguration[]>()
+        .ToDictionary(e => e.AppId, e => e.ApiKey);
+    ```
+
+3. Enable HMAC authentication in `Startup.cs` in the `ConfigureServices` method. The `.AddHmacAuthentication(...)` method will use the configured `IHmacAuthorizationProvider` for resolving HMAC apps:
+
+    ```csharp
+    services
+        .AddAuthentication(o =>
         {
-            "AppId": "<some-app-id>",
-            "ApiKey": "<some-api-key>"
-        }
-    ]
-  }
-}
-```
+            o.DefaultScheme = HmacAuthenticationDefaults.AuthenticationScheme;
+        })
+        .AddHmacAuthentication(HmacAuthenticationDefaults.AuthenticationScheme, "HMAC Authentication", options => { });
+    ```
 
-2. Enable HMAC authentication in `Startup.cs` in the `ConfigureServices` method:
-
-```csharp
-services
-    .AddAuthentication(o =>
-    {
-        o.DefaultScheme = HmacAuthenticationDefaults.AuthenticationScheme;
-    })
-    .AddHmacAuthentication(HmacAuthenticationDefaults.AuthenticationScheme, "HMAC Authentication", o =>
-    {
-        o.MaxRequestAgeInSeconds = HmacAuthenticationDefaults.MaxRequestAgeInSeconds;
-        o.HmacAuthenticatedApps = hmacAuthenticatedApps;
-    });
-```
-
-3. Add `MemoryCache` (from [Microsoft.Extensions.Caching.Memory](https://www.nuget.org/packages/Microsoft.Extensions.Caching.Memory/)) in `Startup.cs` in the `ConfigureServices` method.
+4. Add `MemoryCache` (from [Microsoft.Extensions.Caching.Memory](https://www.nuget.org/packages/Microsoft.Extensions.Caching.Memory/)) in `Startup.cs` in the `ConfigureServices` method.
 The `MemoryCache` is used by the HMAC `AuthenticationHandler` to determine replay attacks.
 
-```csharp
-services.AddMemoryCache();
-```
+    ```csharp
+    services.AddMemoryCache();
+    ```
 
-4. Enable authentication in `Startup.cs` in the `Configure` method:
+5. Enable authentication in `Startup.cs` in the `Configure` method:
 
-```csharp
-app.UseAuthentication();
-```
+    ```csharp
+    app.UseAuthentication();
+    ```
 
-5. Optional: Specify HMAC as the authentication scheme for certain controllers:
+6. Optional: Specify HMAC as the authentication scheme for certain controllers:
 
-```csharp
-[Authorize(AuthenticationSchemes = HmacAuthenticationDefaults.AuthenticationScheme)]
-[Route("api/[controller]")]
-public class HomeController : Controller
-{
-   // ...
-}
-```
+    ```csharp
+    [Authorize(AuthenticationSchemes = HmacAuthenticationDefaults.AuthenticationScheme)]
+    [Route("api/[controller]")]
+    public class HomeController : Controller
+    {
+       // ...
+    }
+    ```
 
 ### softaware.Authentication.Hmac.Client
 
@@ -141,15 +143,17 @@ Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/ap
 Enable Basic authentication in `Startup.cs` in the `ConfigureServices` method:
 
 ```csharp
-services.AddAuthentication(o =>
+services.AddTransient<IBasicAuthenticationProvider>(_ => new MemoryBasicAuthenticationProvider(authenticatedApps));
+
+services
+    .AddAuthentication(o =>
     {
         o.DefaultScheme = BasicAuthenticationDefaults.AuthenticationScheme;
     })
-    .AddBasicAuthentication(BasicAuthenticationDefaults.AuthenticationScheme, o =>
-    {
-        o.AuthorizationProvider = new MemoryBasicAuthenticationProvider(authenticatedApps);
-    });
+    .AddBasicAuthentication();
 ```
+
+If you want to validate usernames and passwords from the basic authentication header more sophisticated than the built-in `MemoryBasicAuthenticationProvider`, just implement and register your own `IBasicAuthenticationProvider`.
 
 ### softaware.Authentication.Basic.Client
 

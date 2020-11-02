@@ -23,14 +23,13 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         {
             builder.ConfigureServices(services =>
             {
+                services.AddTransient(_ => this.basicAuthorizationProvider);
+
                 services.AddAuthentication(o =>
                 {
                     o.DefaultScheme = BasicAuthenticationDefaults.AuthenticationScheme;
                 })
-                .AddBasicAuthentication(BasicAuthenticationDefaults.AuthenticationScheme, o =>
-                {
-                    o.AuthorizationProvider = basicAuthorizationProvider;
-                });
+                .AddBasicAuthentication();
             });
         }
     }
