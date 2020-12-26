@@ -143,7 +143,7 @@ Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/ap
 Enable Basic authentication in `Startup.cs` in the `ConfigureServices` method:
 
 ```csharp
-services.AddTransient<IBasicAuthenticationProvider>(_ => new MemoryBasicAuthenticationProvider(authenticatedApps));
+services.AddTransient<IBasicAuthorizationProvider>(_ => new MemoryBasicAuthenticationProvider(authenticatedApps));
 
 services
     .AddAuthentication(o =>
