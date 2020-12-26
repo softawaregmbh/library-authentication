@@ -155,6 +155,11 @@ services
 
 If you want to validate usernames and passwords from the basic authentication header more sophisticated than the built-in `MemoryBasicAuthenticationProvider`, just implement and register your own `IBasicAuthenticationProvider`.
 
+Enable Authentication in `Startup.cs` in the `Configure` method:
+```csharp
+app.UseAuthentication();
+```
+
 ### softaware.Authentication.Basic.Client
 
 Provides a `DelegatingHandler` for adding an HMAC authorization header to HTTP requests.
