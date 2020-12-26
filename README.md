@@ -143,7 +143,7 @@ Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/ap
 Enable Basic authentication in `Startup.cs` in the `ConfigureServices` method:
 
 ```csharp
-services.AddTransient<IBasicAuthenticationProvider>(_ => new MemoryBasicAuthenticationProvider(authenticatedApps));
+services.AddTransient<IBasicAuthorizationProvider>(_ => new MemoryBasicAuthenticationProvider(authenticatedApps));
 
 services
     .AddAuthentication(o =>
@@ -154,6 +154,11 @@ services
 ```
 
 If you want to validate usernames and passwords from the basic authentication header more sophisticated than the built-in `MemoryBasicAuthenticationProvider`, just implement and register your own `IBasicAuthenticationProvider`.
+
+Enable Authentication in `Startup.cs` in the `Configure` method:
+```csharp
+app.UseAuthentication();
+```
 
 ### softaware.Authentication.Basic.Client
 
