@@ -153,7 +153,7 @@ services
     .AddBasicAuthentication();
 ```
 
-If you want to validate usernames and passwords from the basic authentication header more sophisticated than the built-in `MemoryBasicAuthenticationProvider`, just implement and register your own `IBasicAuthenticationProvider`.
+If you want to validate usernames and passwords from the basic authentication header more sophisticated than the built-in `MemoryBasicAuthenticationProvider`, just implement and register your own `IBasicAuthorizationProvider`.
 
 Enable Authentication in `Startup.cs` in the `Configure` method:
 ```csharp
