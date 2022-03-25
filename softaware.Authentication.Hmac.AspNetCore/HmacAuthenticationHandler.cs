@@ -106,7 +106,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
         {
             var requestContentBase64String = string.Empty;
             var absoluteUri = string.Concat(
-                        req.Scheme,
+                        GetRequestScheme(req),
                         "://",
                         req.Host.ToUriComponent(),
                         req.PathBase.ToUriComponent(),
@@ -176,6 +176,13 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             this.memoryCache.Set(nonce, requestTimeStamp, DateTimeOffset.UtcNow.AddSeconds(this.Options.MaxRequestAgeInSeconds));
             return false;
+        }
+
+        private string GetRequestScheme(HttpRequest req)
+        {
+            if (this.Options.TrustProxy && req.Headers.TryGetValue("X-Forwarded-Proto", out var scheme))
+                return scheme;
+            return req.Scheme;
         }
 
         private static byte[] ComputeHash(byte[] body)

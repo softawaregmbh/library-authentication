@@ -11,6 +11,8 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         public string AuthenticationScheme { get; set; }
 
+        public bool TrustProxy { get; set; }
+
         private IDictionary<string, string> hmacAuthenticatedApps = new Dictionary<string, string>();
 
         [Obsolete("Please use the MemoryHmacAuthenticationProvider for configuring the HMAC apps in-memory. This property will be removed in future versions of this package.", error: false)]
