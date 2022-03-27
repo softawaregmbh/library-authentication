@@ -11,6 +11,9 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         public string AuthenticationScheme { get; set; }
 
+        /// <summary>
+        /// If <see langword="true"/>, the request scheme from the 'X-Forwarded-Proto' header is used to validate the request.
+        /// </summary>
         public bool TrustProxy { get; set; }
 
         private IDictionary<string, string> hmacAuthenticatedApps = new Dictionary<string, string>();

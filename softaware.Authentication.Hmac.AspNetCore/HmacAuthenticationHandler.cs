@@ -106,7 +106,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
         {
             var requestContentBase64String = string.Empty;
             var absoluteUri = string.Concat(
-                        GetRequestScheme(req),
+                        this.GetRequestScheme(req),
                         "://",
                         req.Host.ToUriComponent(),
                         req.PathBase.ToUriComponent(),
@@ -181,7 +181,9 @@ namespace softaware.Authentication.Hmac.AspNetCore
         private string GetRequestScheme(HttpRequest req)
         {
             if (this.Options.TrustProxy && req.Headers.TryGetValue("X-Forwarded-Proto", out var scheme))
+            {
                 return scheme;
+            }
             return req.Scheme;
         }
 
