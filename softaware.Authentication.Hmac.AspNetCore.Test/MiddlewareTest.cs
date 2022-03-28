@@ -48,6 +48,36 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 Assert.True(response.StatusCode == HttpStatusCode.OK);
             }
         }
+        
+        [Fact]
+        public async Task Request_Authorized_WithTrustProxy()
+        {
+            using (var client = this.GetHttpClientWithTrustProxyOption(
+                       new Dictionary<string, string>() {{"appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="}},
+                       "appId",
+                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
+            {
+                client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "http");
+
+                var response = await client.GetAsync("api/test");
+                Assert.True(response.StatusCode == HttpStatusCode.OK);
+            }
+        }
+        
+        [Fact]
+        public async Task Request_Unauthorized_WithTrustProxy()
+        {
+            using (var client = this.GetHttpClientWithTrustProxyOption(
+                       new Dictionary<string, string>() {{"appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="}},
+                       "appId",
+                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
+            {
+                client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
+
+                var response = await client.GetAsync("api/test");
+                Assert.True(response.StatusCode == HttpStatusCode.Unauthorized);
+            }
+        }
 
         [Theory]
         [InlineData("appId", "YXJld3JzZHJkc2FhcndlZQ==")]
@@ -150,6 +180,16 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         private HttpClient GetHttpClientWithDefaultAuthorizationProvider(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
         {
             var factory = new TestWebApplicationFactoryWithDefaultAuthorizationProvider(hmacAuthenticatedApps);
+            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
+        }
+        
+        private HttpClient GetHttpClientWithTrustProxyOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
+        {
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
+                o.TrustProxy = true;
+            });
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
     }
