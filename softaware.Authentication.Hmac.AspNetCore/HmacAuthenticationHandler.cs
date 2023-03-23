@@ -189,12 +189,12 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private static byte[] ComputeHash(byte[] body)
         {
-            using (var md5 = MD5.Create())
+            using (var sha256 = SHA256.Create())
             {
                 byte[] hash = null;
                 if (body.Length != 0)
                 {
-                    hash = md5.ComputeHash(body);
+                    hash = sha256.ComputeHash(body);
                 }
 
                 return hash;

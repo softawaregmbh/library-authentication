@@ -56,11 +56,12 @@ namespace softaware.Authentication.Hmac.Client
             if (request.Content != null)
             {
                 var content = await request.Content.ReadAsByteArrayAsync();
-                var md5 = MD5.Create();
-
-                // Hashing the request body, any change in request body will result in different hash, we'll incure message integrity
-                var requestContentHash = md5.ComputeHash(content);
-                requestContentBase64String = Convert.ToBase64String(requestContentHash);
+                using (var sha256 = SHA256.Create())
+                {
+                    // Hashing the request body, any change in request body will result in different hash, we'll incure message integrity
+                    var requestContentHash = sha256.ComputeHash(content);
+                    requestContentBase64String = Convert.ToBase64String(requestContentHash);
+                }
             }
 
             // Creating the raw signature string
