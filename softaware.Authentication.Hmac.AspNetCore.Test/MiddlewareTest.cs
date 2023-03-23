@@ -48,12 +48,12 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 Assert.True(response.StatusCode == HttpStatusCode.OK);
             }
         }
-        
+
         [Fact]
         public async Task Request_Authorized_WithTrustProxy()
         {
             using (var client = this.GetHttpClientWithTrustProxyOption(
-                       new Dictionary<string, string>() {{"appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="}},
+                       new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                        "appId",
                        "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
             {
@@ -63,12 +63,12 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 Assert.True(response.StatusCode == HttpStatusCode.OK);
             }
         }
-        
+
         [Fact]
         public async Task Request_Unauthorized_WithTrustProxy()
         {
             using (var client = this.GetHttpClientWithTrustProxyOption(
-                       new Dictionary<string, string>() {{"appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="}},
+                       new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                        "appId",
                        "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
             {
@@ -76,6 +76,53 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
 
                 var response = await client.GetAsync("api/test");
                 Assert.True(response.StatusCode == HttpStatusCode.Unauthorized);
+            }
+        }
+
+        [Theory]
+        [InlineData(RequestBodyHashingMethod.MD5)]
+        [InlineData(RequestBodyHashingMethod.SHA256)]
+        public async Task Request_Authorized_WithMD5ClientAndMD5AllowedOnServer(RequestBodyHashingMethod requestBodyHashingMethod)
+        {
+            using (var client = this.GetHttpClientWithAllowMD5AndSHA256RequestBodyHashOption(
+                       new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                       "appId",
+                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
+                       allowMD5AndSHA256RequestBodyHash: true,
+                       requestBodyHashingMethod: requestBodyHashingMethod))
+            {
+                var response = await client.PostAsync("api/test", new StringContent("test"));
+                Assert.True(response.StatusCode == HttpStatusCode.OK);
+            }
+        }
+
+        [Fact]
+        public async Task Request_Unauthorized_MD5ClientAndMD5NotAllowedOnServer()
+        {
+            using (var client = this.GetHttpClientWithAllowMD5AndSHA256RequestBodyHashOption(
+                       new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                       "appId",
+                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
+                       allowMD5AndSHA256RequestBodyHash: false,
+                       requestBodyHashingMethod: RequestBodyHashingMethod.MD5))
+            {
+                var response = await client.PostAsync("api/test", new StringContent("test"));
+                Assert.True(response.StatusCode == HttpStatusCode.Unauthorized);
+            }
+        }
+
+        [Fact]
+        public async Task Request_Authorized_SHA256ClientAndMD5NotAllowedOnServer()
+        {
+            using (var client = this.GetHttpClientWithAllowMD5AndSHA256RequestBodyHashOption(
+                       new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                       "appId",
+                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
+                       allowMD5AndSHA256RequestBodyHash: false,
+                       requestBodyHashingMethod: RequestBodyHashingMethod.SHA256))
+            {
+                var response = await client.PostAsync("api/test", new StringContent("test"));
+                Assert.True(response.StatusCode == HttpStatusCode.OK);
             }
         }
 
@@ -182,7 +229,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             var factory = new TestWebApplicationFactoryWithDefaultAuthorizationProvider(hmacAuthenticatedApps);
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
-        
+
         private HttpClient GetHttpClientWithTrustProxyOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
         {
             var factory = new TestWebApplicationFactory(o =>
@@ -191,6 +238,21 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 o.TrustProxy = true;
             });
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
+        }
+
+        private HttpClient GetHttpClientWithAllowMD5AndSHA256RequestBodyHashOption(
+            IDictionary<string, string> hmacAuthenticatedApps,
+            string appId,
+            string apiKey,
+            bool allowMD5AndSHA256RequestBodyHash,
+            RequestBodyHashingMethod requestBodyHashingMethod)
+        {
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
+                o.AllowMD5AndSHA256RequestBodyHash = allowMD5AndSHA256RequestBodyHash;
+            });
+            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey, requestBodyHashingMethod));
         }
     }
 }

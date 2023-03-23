@@ -13,11 +13,18 @@ namespace softaware.Authentication.Hmac.Client
     {
         private readonly string appId;
         private readonly string apiKey;
+        private readonly RequestBodyHashingMethod requestBodyHashingMethod;
 
         public ApiKeyDelegatingHandler(string appId, string apiKey)
+            : this(appId, apiKey, RequestBodyHashingMethod.MD5)
+        {
+        }
+
+        public ApiKeyDelegatingHandler(string appId, string apiKey, RequestBodyHashingMethod requestBodyHashingMethod)
         {
             this.appId = !string.IsNullOrWhiteSpace(appId) ? appId : throw new ArgumentNullException(nameof(appId));
             this.apiKey = !string.IsNullOrWhiteSpace(apiKey) ? apiKey : throw new ArgumentNullException(nameof(apiKey));
+            this.requestBodyHashingMethod = requestBodyHashingMethod;
 
             try
             {
@@ -30,10 +37,18 @@ namespace softaware.Authentication.Hmac.Client
         }
 
         public ApiKeyDelegatingHandler(string appId, string apiKey, HttpMessageHandler innerHandler)
+            : this(appId, apiKey, RequestBodyHashingMethod.MD5, innerHandler)
+        {
+            this.appId = appId ?? throw new ArgumentNullException(nameof(appId));
+            this.apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
+        }
+
+        public ApiKeyDelegatingHandler(string appId, string apiKey, RequestBodyHashingMethod requestBodyHashingMethod, HttpMessageHandler innerHandler)
             : base(innerHandler)
         {
             this.appId = appId ?? throw new ArgumentNullException(nameof(appId));
             this.apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
+            this.requestBodyHashingMethod = requestBodyHashingMethod;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -56,10 +71,10 @@ namespace softaware.Authentication.Hmac.Client
             if (request.Content != null)
             {
                 var content = await request.Content.ReadAsByteArrayAsync();
-                using (var sha256 = SHA256.Create())
+                using (var hashAlgorithm = this.GetHashAlgorithm())
                 {
                     // Hashing the request body, any change in request body will result in different hash, we'll incure message integrity
-                    var requestContentHash = sha256.ComputeHash(content);
+                    var requestContentHash = hashAlgorithm.ComputeHash(content);
                     requestContentBase64String = Convert.ToBase64String(requestContentHash);
                 }
             }
@@ -84,6 +99,19 @@ namespace softaware.Authentication.Hmac.Client
             var response = await base.SendAsync(request, cancellationToken);
 
             return response;
+        }
+
+        private HashAlgorithm GetHashAlgorithm()
+        {
+            switch (this.requestBodyHashingMethod)
+            {
+                case RequestBodyHashingMethod.MD5:
+                    return MD5.Create();
+                case RequestBodyHashingMethod.SHA256:
+                    return SHA256.Create();
+                default:
+                    throw new NotSupportedException($"requestBodyHashingMethod {requestBodyHashingMethod} is not supported.");
+            }
         }
     }
 }

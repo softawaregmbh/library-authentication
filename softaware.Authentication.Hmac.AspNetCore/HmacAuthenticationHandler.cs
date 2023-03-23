@@ -127,25 +127,53 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return false;
             }
 
-            var hash = ComputeHash(body);
-
-            if (hash != null)
+            var sha256RequestBodyHash = ComputeSHA256Hash(body);
+            if (sha256RequestBodyHash != null)
             {
-                requestContentBase64String = Convert.ToBase64String(hash);
+                requestContentBase64String = Convert.ToBase64String(sha256RequestBodyHash);
             }
-
-            var data = $"{appId}{requestHttpMethod}{requestUri}{requestTimeStamp}{nonce}{requestContentBase64String}";
 
             var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
-
-            var signature = Encoding.UTF8.GetBytes(data);
-
             using (var hmac = new HMACSHA256(apiKeyBytes))
             {
-                byte[] signatureBytes = hmac.ComputeHash(signature);
+                var computedSignature = this.ComputeBase64Signature(appId, requestHttpMethod, requestUri, requestTimeStamp, nonce, requestContentBase64String, hmac);
+                var signatureIsValid = incomingBase64Signature.Equals(computedSignature, StringComparison.Ordinal);
+                if (signatureIsValid)
+                {
+                    return true;
+                }
+                else if (this.Options.AllowMD5AndSHA256RequestBodyHash)
+                {
+                    var md5RequestBodyHash = ComputeMD5Hash(body);
+                    if (md5RequestBodyHash != null)
+                    {
+                        requestContentBase64String = Convert.ToBase64String(md5RequestBodyHash);
+                    }
 
-                return incomingBase64Signature.Equals(Convert.ToBase64String(signatureBytes), StringComparison.Ordinal);
+                    computedSignature = this.ComputeBase64Signature(appId, requestHttpMethod, requestUri, requestTimeStamp, nonce, requestContentBase64String, hmac);
+                    return incomingBase64Signature.Equals(computedSignature, StringComparison.Ordinal);
+                }
+                else
+                {
+                    return false;
+                }
             }
+        }
+
+        private string ComputeBase64Signature(
+            string appId,
+            string requestHttpMethod,
+            string requestUri,
+            string requestTimeStamp,
+            string nonce,
+            string requestContentBase64String,
+            HMACSHA256 hmac)
+        {
+            var data = $"{appId}{requestHttpMethod}{requestUri}{requestTimeStamp}{nonce}{requestContentBase64String}";
+            var signature = Encoding.UTF8.GetBytes(data);
+            byte[] signatureBytes = hmac.ComputeHash(signature);
+
+            return Convert.ToBase64String(signatureBytes);
         }
 
         private static string[] GetAuthenticationValues(string rawAuthenticationHeader)
@@ -187,7 +215,21 @@ namespace softaware.Authentication.Hmac.AspNetCore
             return req.Scheme;
         }
 
-        private static byte[] ComputeHash(byte[] body)
+        private static byte[] ComputeMD5Hash(byte[] body)
+        {
+            using (var md5 = MD5.Create())
+            {
+                byte[] hash = null;
+                if (body.Length != 0)
+                {
+                    hash = md5.ComputeHash(body);
+                }
+
+                return hash;
+            }
+        }
+
+        private static byte[] ComputeSHA256Hash(byte[] body)
         {
             using (var sha256 = SHA256.Create())
             {
