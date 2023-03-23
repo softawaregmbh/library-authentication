@@ -14,9 +14,9 @@ variables:
 
 steps:
 - task: UseDotNet@2
-  displayName: 'Use .NET Core 3.1'
+  displayName: 'Use .NET 7'
   inputs:
-    version: 3.1.x
+    version: 7.x.x
 
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
