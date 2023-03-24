@@ -177,7 +177,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 ? Enum.TryParse<RequestBodyHashingMethod>(authenticationHeaderArray[1], out var rhm) ? rhm : throw new NotSupportedException($"Request body hashing method {authenticationHeaderArray[1]} is not supported.")
                 : RequestBodyHashingMethod.MD5; // Default value in previous library versions before changing header to include hashing algorithm.
 
-            var appId = hashHashingAlgorithmProperties ? authenticationHeaderArray[2] : authenticationHeaderArray[1];
+            var appId = hashHashingAlgorithmProperties ? authenticationHeaderArray[2] : authenticationHeaderArray[0];
             var incomingBase64Signature = hashHashingAlgorithmProperties ? authenticationHeaderArray[3] : authenticationHeaderArray[1];
             var nonce = hashHashingAlgorithmProperties ? authenticationHeaderArray[4] : authenticationHeaderArray[2];
             var requestTimeStamp = hashHashingAlgorithmProperties ? authenticationHeaderArray[5] : authenticationHeaderArray[3];

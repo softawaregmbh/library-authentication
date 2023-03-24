@@ -32,6 +32,48 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         }
 
         [Fact]
+        public Task Request_WithoutHashingMethodsInHeader_MD5AndHMACSHA256Used_Authorized()
+        {
+            return this.TestRequestAsync(
+                new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                "appId",
+                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
+                hmacHashingMethod: HmacHashingMethod.HMACSHA256,
+                requestBodyHashingMethod: RequestBodyHashingMethod.MD5,
+                HttpStatusCode.OK,
+                removeHashingAlgorithmFromHeader: true);
+        }
+
+        /// <summary>
+        /// If no hashing algorithm is sent in header, the default values HMAC256 and MD5 are assumed.
+        /// (Default values from previous library version.)
+        /// If different method is specified in <see cref="ApiKeyDelegatingHandler"/>, the server assumes invalid signature.
+        /// </summary>
+        /// <remarks>
+        /// This test ensures that older versions of the <see cref="ApiKeyDelegatingHandler"/>, which doesn't send hashing algorithm header,
+        /// still works with the default values.
+        /// </remarks>
+        [Theory]
+        [InlineData(HmacHashingMethod.HMACSHA256, RequestBodyHashingMethod.MD5, HttpStatusCode.OK)]
+        [InlineData(HmacHashingMethod.HMACSHA512, RequestBodyHashingMethod.MD5, HttpStatusCode.Unauthorized)]
+        [InlineData(HmacHashingMethod.HMACSHA256, RequestBodyHashingMethod.SHA256, HttpStatusCode.Unauthorized)]
+        [InlineData(HmacHashingMethod.HMACSHA512, RequestBodyHashingMethod.SHA256, HttpStatusCode.Unauthorized)]
+        public Task Request_WithoutHashingMethodsInHeader(
+            HmacHashingMethod hmacHashingMethod,
+            RequestBodyHashingMethod requestBodyHashingMethod,
+            HttpStatusCode httpStatusCode)
+        {
+            return this.TestRequestAsync(
+                new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                "appId",
+                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
+                hmacHashingMethod,
+                requestBodyHashingMethod,
+                httpStatusCode,
+                removeHashingAlgorithmFromHeader: true);
+        }
+
+        [Fact]
         public async Task Request_WithDeprecatedHmacAuthorizedAppsOption_Authorized()
         {
             using (var client = this.GetHttpClientWithHmacAutenticatedAppsOption(
@@ -163,17 +205,19 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             HmacHashingMethod hmacHashingMethod,
             RequestBodyHashingMethod requestBodyHashingMethod,
             HttpStatusCode expectedStatusCode,
-            string endpoint = "api/test")
+            string endpoint = "api/test",
+            bool removeHashingAlgorithmFromHeader = false)
         {
             using (var client = this.GetHttpClient(
                 authenticatedApps,
                 appId,
                 apiKey,
                 hmacHashingMethod,
-                requestBodyHashingMethod))
+                requestBodyHashingMethod,
+                removeHashingAlgorithmFromHeader))
             {
                 var response = await client.PostAsync(endpoint, new StringContent("test-content"));
-                Assert.True(response.StatusCode == expectedStatusCode);
+                Assert.Equal(expectedStatusCode, response.StatusCode);
 
                 return response;
             }
@@ -184,13 +228,25 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             string appId,
             string apiKey,
             HmacHashingMethod hmacHashingMethod,
-            RequestBodyHashingMethod requestBodyHashingMethod)
+            RequestBodyHashingMethod requestBodyHashingMethod,
+            bool removeHashingAlgorithmFromHeader)
         {
             var factory = new TestWebApplicationFactory(o =>
             {
                 o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
             });
-            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey, hmacHashingMethod, requestBodyHashingMethod));
+
+            var handlers = new List<DelegatingHandler>
+            {
+                new ApiKeyDelegatingHandler(appId, apiKey, hmacHashingMethod, requestBodyHashingMethod)
+            };
+
+            if (removeHashingAlgorithmFromHeader)
+            {
+                handlers.Add(new RemoveHashingMethodDelegatingHandler());
+            }
+
+            return factory.CreateDefaultClient(handlers.ToArray());
         }
 
         private HttpClient GetHttpClientWithHmacAutenticatedAppsOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
