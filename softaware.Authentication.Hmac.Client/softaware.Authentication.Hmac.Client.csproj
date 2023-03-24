@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- This project will output netstandard2.0 and net461 assemblies -->
-    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company>softaware gmbh</Company>
     <Authors>softaware gmbh</Authors>
     <Description>A client library for HMAC authentication.</Description>
-    <Version>1.2.0</Version>
+    <Version>2.0.0</Version>
     <RepositoryUrl>https://github.com/softawaregmbh/library-authentication</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>softaware, authentication, HMAC</PackageTags>
@@ -21,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
@@ -29,12 +28,6 @@
 
   <ItemGroup>
     <Content Include="..\Assets\package-icon.png" Link="package-icon.png" Pack="true" PackagePath="/" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
-    <PackageReference Include="System.Net.Http">
-      <Version>4.3.4</Version>
-    </PackageReference>
   </ItemGroup>
 
 </Project>
