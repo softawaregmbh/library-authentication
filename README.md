@@ -16,6 +16,8 @@
 
 ### softaware.Authentication.Hmac.AspNetCore
 
+![Nuget](https://img.shields.io/nuget/v/softaware.Authentication.Hmac.AspNetCore)
+
 Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1?view=aspnetcore-2.1) which supports [HMAC](https://en.wikipedia.org/wiki/HMAC) authentication in an ASP.NET Core project.
 
 Usage:
@@ -86,6 +88,8 @@ The `MemoryCache` is used by the HMAC `AuthenticationHandler` to determine repla
 
 ### softaware.Authentication.Hmac.Client
 
+![Nuget](https://img.shields.io/nuget/v/softaware.Authentication.Hmac.Client)
+
 Provides a `DelegatingHandler` for adding an HMAC authorization header to HTTP requests.
 
 Instantiate your `HttpClient` instance with the `ApiKeyDelegatingHandler`.
@@ -138,6 +142,8 @@ public class Program
 
 ### softaware.Authentication.Basic.AspNetCore
 
+![Nuget](https://img.shields.io/nuget/v/softaware.Authentication.Basic.AspNetCore)
+
 Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1?view=aspnetcore-2.1) which supports [Basic](https://en.wikipedia.org/wiki/Basic_access_authentication) authentication in an ASP.NET Core project.
 
 Enable Basic authentication in `Startup.cs` in the `ConfigureServices` method:
@@ -161,6 +167,8 @@ app.UseAuthentication();
 ```
 
 ### softaware.Authentication.Basic.Client
+
+![Nuget](https://img.shields.io/nuget/v/softaware.Authentication.Basic.Client)
 
 Provides a `DelegatingHandler` for adding an HMAC authorization header to HTTP requests.
 
