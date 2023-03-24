@@ -252,7 +252,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
                 o.AllowMD5AndSHA256RequestBodyHash = allowMD5AndSHA256RequestBodyHash;
             });
-            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey, requestBodyHashingMethod));
+            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey, HmacHashingMethod.HMACSHA256, requestBodyHashingMethod));
         }
     }
 }
