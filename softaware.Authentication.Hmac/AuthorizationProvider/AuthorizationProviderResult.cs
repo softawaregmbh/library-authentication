@@ -1,6 +1,6 @@
 ﻿namespace softaware.Authentication.Hmac.AuthorizationProvider
 {
-    public struct AuthorizationProviderResult
+    public readonly struct AuthorizationProviderResult
     {
         public AuthorizationProviderResult(string appId, bool found, string apiKey)
         {

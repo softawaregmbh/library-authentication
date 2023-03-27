@@ -6,7 +6,7 @@ namespace softaware.Authentication.Hmac.AuthorizationProvider
 {
     public class MemoryHmacAuthenticationProvider : IHmacAuthorizationProvider
     {
-        private IDictionary<string, string> hmacAuthenticatedApps;
+        private readonly IDictionary<string, string> hmacAuthenticatedApps;
 
         public MemoryHmacAuthenticationProvider(IDictionary<string, string> hmacAuthenticatedApps)
         {
