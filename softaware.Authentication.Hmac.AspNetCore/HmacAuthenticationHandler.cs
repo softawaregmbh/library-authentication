@@ -162,25 +162,25 @@ namespace softaware.Authentication.Hmac.AspNetCore
             var authenticationHeaderArray = rawAuthenticationHeader.Split(':');
 
             var isValidHeader = authenticationHeaderArray.Length == 4 || authenticationHeaderArray.Length == 6;
-            var hashHashingAlgorithmProperties = authenticationHeaderArray.Length == 6;
+            var hasHashingAlgorithmProperties = authenticationHeaderArray.Length == 6;
 
             if (!isValidHeader)
             {
                 return (IsValidHeader: false, null);
             }
 
-            var hmacHashingMethod = hashHashingAlgorithmProperties
+            var hmacHashingMethod = hasHashingAlgorithmProperties
                 ? Enum.TryParse<HmacHashingMethod>(authenticationHeaderArray[0], out var hhm) ? hhm : throw new NotSupportedException($"Hmac hashing method {authenticationHeaderArray[0]} is not supported.")
                 : HmacHashingMethod.HMACSHA256; // Default value in previous library versions before changing header to include hashing algorithm.
 
-            var requestBodyHashingMethod = hashHashingAlgorithmProperties
+            var requestBodyHashingMethod = hasHashingAlgorithmProperties
                 ? Enum.TryParse<RequestBodyHashingMethod>(authenticationHeaderArray[1], out var rhm) ? rhm : throw new NotSupportedException($"Request body hashing method {authenticationHeaderArray[1]} is not supported.")
                 : RequestBodyHashingMethod.MD5; // Default value in previous library versions before changing header to include hashing algorithm.
 
-            var appId = hashHashingAlgorithmProperties ? authenticationHeaderArray[2] : authenticationHeaderArray[0];
-            var incomingBase64Signature = hashHashingAlgorithmProperties ? authenticationHeaderArray[3] : authenticationHeaderArray[1];
-            var nonce = hashHashingAlgorithmProperties ? authenticationHeaderArray[4] : authenticationHeaderArray[2];
-            var requestTimeStamp = hashHashingAlgorithmProperties ? authenticationHeaderArray[5] : authenticationHeaderArray[3];
+            var appId = hasHashingAlgorithmProperties ? authenticationHeaderArray[2] : authenticationHeaderArray[0];
+            var incomingBase64Signature = hasHashingAlgorithmProperties ? authenticationHeaderArray[3] : authenticationHeaderArray[1];
+            var nonce = hasHashingAlgorithmProperties ? authenticationHeaderArray[4] : authenticationHeaderArray[2];
+            var requestTimeStamp = hasHashingAlgorithmProperties ? authenticationHeaderArray[5] : authenticationHeaderArray[3];
 
             var values = new HmacAuthenticationHeaderValues(
                 hmacHashingMethod,
