@@ -30,4 +30,8 @@
     <Content Include="..\Assets\package-icon.png" Link="package-icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\softaware.Authentication.Hmac\softaware.Authentication.Hmac.csproj" />
+  </ItemGroup>
+
 </Project>

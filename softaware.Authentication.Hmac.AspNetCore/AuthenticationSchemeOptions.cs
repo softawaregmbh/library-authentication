@@ -16,17 +16,6 @@ namespace softaware.Authentication.Hmac.AspNetCore
         /// </summary>
         public bool TrustProxy { get; set; }
 
-        /// <summary>
-        /// If <see langword="true"/>, the request body hash will be validated with MD5 hash and SHA265 hash.
-        /// Note that this setting is only relevant when the http request has a body.
-        /// (Default: <see langword="true"/>)
-        /// </summary>
-        /// <remarks>
-        /// This setting helps upgrading from MD5 to SHA256 hash without breaking changes.
-        /// </remarks>
-        [Obsolete("Will be removed in the next major version as only SHA256 request body hashing will be supported in future.")]
-        public bool AllowMD5AndSHA256RequestBodyHash { get; set; } = true;
-
         private IDictionary<string, string> hmacAuthenticatedApps = new Dictionary<string, string>();
 
         [Obsolete("Please use the MemoryHmacAuthenticationProvider for configuring the HMAC apps in-memory. This property will be removed in future versions of this package.", error: false)]
