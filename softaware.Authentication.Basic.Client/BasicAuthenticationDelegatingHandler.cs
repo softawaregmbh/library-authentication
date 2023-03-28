@@ -29,7 +29,7 @@ namespace softaware.Authentication.Basic.Client
         {
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 "Basic",
-                Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", this.username, this.password))));
+                Convert.ToBase64String(Encoding.ASCII.GetBytes($"{this.username}:{this.password}")));
 
             return base.SendAsync(request, cancellationToken);
         }

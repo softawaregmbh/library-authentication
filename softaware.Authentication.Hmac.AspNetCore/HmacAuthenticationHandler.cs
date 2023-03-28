@@ -201,10 +201,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return true;
             }
 
-            var epochStart = new DateTime(1970, 01, 01, 0, 0, 0, 0, DateTimeKind.Utc);
-            var currentTs = DateTime.UtcNow - epochStart;
-
-            var serverTotalSeconds = Convert.ToInt64(currentTs.TotalSeconds);
+            var serverTotalSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var requestTotalSeconds = Convert.ToInt64(requestTimeStamp);
             var diff = Math.Abs(serverTotalSeconds - requestTotalSeconds);
 

@@ -22,7 +22,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             [CombinatorialMemberData(nameof(GetHmacHashingMethods))] HmacHashingMethod hmacHashingMethod,
             [CombinatorialMemberData(nameof(GetRequestBodyHashingMethods))] RequestBodyHashingMethod requestBodyHashingMethod)
         {
-            return this.TestRequestAsync(
+            return TestRequestAsync(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 "appId",
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
@@ -34,7 +34,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         [Fact]
         public Task Request_WithoutHashingMethodsInHeader_MD5AndHMACSHA256Used_Authorized()
         {
-            return this.TestRequestAsync(
+            return TestRequestAsync(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 "appId",
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
@@ -63,7 +63,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             RequestBodyHashingMethod requestBodyHashingMethod,
             HttpStatusCode httpStatusCode)
         {
-            return this.TestRequestAsync(
+            return TestRequestAsync(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 "appId",
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
@@ -76,57 +76,53 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         [Fact]
         public async Task Request_WithDeprecatedHmacAuthorizedAppsOption_Authorized()
         {
-            using (var client = this.GetHttpClientWithHmacAutenticatedAppsOption(
+            using var client = GetHttpClientWithHmacAutenticatedAppsOption(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 "appId",
-                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
-            {
-                var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == HttpStatusCode.OK);
-            }
+                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
+
+            var response = await client.GetAsync("api/test");
+            Assert.True(response.StatusCode == HttpStatusCode.OK);
         }
 
         [Fact]
         public async Task Request_WithDefaultAuthorizationProvider_Authorized()
         {
-            using (var client = this.GetHttpClientWithDefaultAuthorizationProvider(
+            using var client = GetHttpClientWithDefaultAuthorizationProvider(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 "appId",
-                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
-            {
-                var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == HttpStatusCode.OK);
-            }
+                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
+
+            var response = await client.GetAsync("api/test");
+            Assert.True(response.StatusCode == HttpStatusCode.OK);
         }
 
         [Fact]
         public async Task Request_Authorized_WithTrustProxy()
         {
-            using (var client = this.GetHttpClientWithTrustProxyOption(
+            using var client = GetHttpClientWithTrustProxyOption(
                        new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                        "appId",
-                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
-            {
-                client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "http");
+                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
 
-                var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == HttpStatusCode.OK);
-            }
+            client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "http");
+
+            var response = await client.GetAsync("api/test");
+            Assert.True(response.StatusCode == HttpStatusCode.OK);
         }
 
         [Fact]
         public async Task Request_Unauthorized_WithTrustProxy()
         {
-            using (var client = this.GetHttpClientWithTrustProxyOption(
+            using var client = GetHttpClientWithTrustProxyOption(
                        new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                        "appId",
-                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w="))
-            {
-                client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
+                       "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
 
-                var response = await client.GetAsync("api/test");
-                Assert.True(response.StatusCode == HttpStatusCode.Unauthorized);
-            }
+            client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
+
+            var response = await client.GetAsync("api/test");
+            Assert.True(response.StatusCode == HttpStatusCode.Unauthorized);
         }
 
         [Theory]
@@ -134,7 +130,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         [InlineData("wrongAppId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=")]
         public Task Request_Unauthorized(string appId, string apiKey)
         {
-            return this.TestRequestAsync(
+            return TestRequestAsync(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 appId,
                 apiKey,
@@ -148,7 +144,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         [InlineData("wrongAppId", "MNpx/353+rW+sdf/RFDAv/615u5w=")]
         public Task Request_ApiKeyBadFormat_ThrowsException(string appId, string apiKey)
         {
-            return Assert.ThrowsAsync<ArgumentException>(() => this.TestRequestAsync(
+            return Assert.ThrowsAsync<ArgumentException>(() => TestRequestAsync(
                 new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 appId,
                 apiKey,
@@ -162,7 +158,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         {
             var appId = "appId";
 
-            var result = await this.TestRequestAsync(
+            var result = await TestRequestAsync(
                 new Dictionary<string, string>() { { appId, "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 appId,
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
@@ -181,7 +177,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         {
             var appId = "appId";
 
-            var result = await this.TestRequestAsync(
+            var result = await TestRequestAsync(
                 new Dictionary<string, string>() { { appId, "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
                 appId,
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
@@ -198,7 +194,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             Assert.Equal(appId, content[0].value.Value);
         }
 
-        private async Task<HttpResponseMessage> TestRequestAsync(
+        private static async Task<HttpResponseMessage> TestRequestAsync(
             IDictionary<string, string> authenticatedApps,
             string appId,
             string apiKey,
@@ -208,22 +204,21 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             string endpoint = "api/test",
             bool removeHashingAlgorithmFromHeader = false)
         {
-            using (var client = this.GetHttpClient(
+            using var client = GetHttpClient(
                 authenticatedApps,
                 appId,
                 apiKey,
                 hmacHashingMethod,
                 requestBodyHashingMethod,
-                removeHashingAlgorithmFromHeader))
-            {
-                var response = await client.PostAsync(endpoint, new StringContent("test-content"));
-                Assert.Equal(expectedStatusCode, response.StatusCode);
+                removeHashingAlgorithmFromHeader);
 
-                return response;
-            }
+            var response = await client.PostAsync(endpoint, new StringContent("test-content"));
+            Assert.Equal(expectedStatusCode, response.StatusCode);
+
+            return response;
         }
 
-        private HttpClient GetHttpClient(
+        private static HttpClient GetHttpClient(
             IDictionary<string, string> hmacAuthenticatedApps,
             string appId,
             string apiKey,
@@ -249,7 +244,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             return factory.CreateDefaultClient(handlers.ToArray());
         }
 
-        private HttpClient GetHttpClientWithHmacAutenticatedAppsOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
+        private static HttpClient GetHttpClientWithHmacAutenticatedAppsOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
         {
             var factory = new TestWebApplicationFactory(o =>
             {
@@ -258,13 +253,13 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
 
-        private HttpClient GetHttpClientWithDefaultAuthorizationProvider(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
+        private static HttpClient GetHttpClientWithDefaultAuthorizationProvider(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
         {
             var factory = new TestWebApplicationFactoryWithDefaultAuthorizationProvider(hmacAuthenticatedApps);
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
 
-        private HttpClient GetHttpClientWithTrustProxyOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
+        private static HttpClient GetHttpClientWithTrustProxyOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
         {
             var factory = new TestWebApplicationFactory(o =>
             {

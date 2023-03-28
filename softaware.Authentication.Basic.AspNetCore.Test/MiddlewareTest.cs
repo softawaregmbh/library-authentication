@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using softaware.Authentication.Basic.AspNetCore.AuthorizationProvider;
 using softaware.Authentication.Basic.Client;
@@ -103,19 +102,18 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
             HttpStatusCode expectedStatusCode,
             string endpoint = "api/test")
         {
-            using (var client = this.GetHttpClient(
+            using var client = GetHttpClient(
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 username,
-                password))
-            {
-                var response = await client.GetAsync(endpoint);
-                Assert.True(response.StatusCode == expectedStatusCode);
+                password);
 
-                return response;
-            }
+            var response = await client.GetAsync(endpoint);
+            Assert.True(response.StatusCode == expectedStatusCode);
+
+            return response;
         }
 
-        private HttpClient GetHttpClient(
+        private static HttpClient GetHttpClient(
             IBasicAuthorizationProvider basicAuthorizationProvider, string username, string password)
         {
             var factory = new TestWebApplicationFactory(basicAuthorizationProvider);

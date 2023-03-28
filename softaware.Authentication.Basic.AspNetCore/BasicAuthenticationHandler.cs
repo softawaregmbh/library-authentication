@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using softaware.Authentication.Basic;
@@ -47,7 +46,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return AuthenticateResult.Fail("'Authorization' header MUST start with 'Basic'.");
             }
 
-            var validationResult = await this.ValidateAsync(this.Request);
+            var validationResult = await this.ValidateAsync();
 
             if (validationResult.Valid)
             {
@@ -69,11 +68,12 @@ namespace softaware.Authentication.Hmac.AspNetCore
             return AuthenticateResult.Fail("Authentication failed");
         }
 
-        private async Task<ValidationResult> ValidateAsync(HttpRequest request)
+        private async Task<ValidationResult> ValidateAsync()
         {
             var result = new ValidationResult();
 
-            if (this.Request.Headers.TryGetValue("Authorization", out var header)) {
+            if (this.Request.Headers.TryGetValue("Authorization", out var header))
+            {
                 var authenticationHeader = AuthenticationHeaderValue.Parse(header);
                 if (this.Options.AuthenticationScheme.Equals(authenticationHeader.Scheme, StringComparison.OrdinalIgnoreCase))
                 {
