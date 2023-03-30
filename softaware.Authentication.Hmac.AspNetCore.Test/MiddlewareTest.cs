@@ -82,7 +82,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
@@ -94,7 +94,22 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_Authorized_WithEmptyPostBody()
+        {
+            using var client = GetHttpClient(
+                new Dictionary<string, string>() { { "appId", "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=" } },
+                "appId",
+                "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=",
+                HmacHashingMethod.HMACSHA256,
+                RequestBodyHashingMethod.SHA256,
+                removeHashingAlgorithmFromHeader: false);
+
+            var response = await client.PostAsync("api/test", new StringContent(string.Empty));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
@@ -108,7 +123,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "http");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
@@ -122,7 +137,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
         [Theory]
