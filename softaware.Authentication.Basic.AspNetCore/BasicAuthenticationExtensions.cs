@@ -1,9 +1,9 @@
-﻿using System;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using softaware.Authentication.Hmac.AspNetCore;
+using System;
 
 namespace softaware.Authentication.Basic.AspNetCore
 {
@@ -20,7 +20,7 @@ namespace softaware.Authentication.Basic.AspNetCore
 
         public static AuthenticationBuilder AddBasicAuthentication(this AuthenticationBuilder builder, string authenticationScheme, string displayName, Action<BasicAuthenticationSchemeOptions> configureOptions)
         {
-            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<BasicAuthenticationSchemeOptions>, BasicAuthenticationPostConfigureOptions>());
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Transient<IPostConfigureOptions<BasicAuthenticationSchemeOptions>, BasicAuthenticationPostConfigureOptions>());
             return builder.AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(authenticationScheme, displayName, configureOptions);
         }
     }

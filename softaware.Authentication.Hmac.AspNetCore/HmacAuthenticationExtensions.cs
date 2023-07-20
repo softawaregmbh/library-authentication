@@ -1,8 +1,8 @@
-﻿using System;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using System;
 
 namespace softaware.Authentication.Hmac.AspNetCore
 {
@@ -30,7 +30,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
             string displayName,
             Action<HmacAuthenticationSchemeOptions> configureOptions)
         {
-            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<HmacAuthenticationSchemeOptions>, HmacAuthenticationPostConfigureOptions>());
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Transient<IPostConfigureOptions<HmacAuthenticationSchemeOptions>, HmacAuthenticationPostConfigureOptions>());
             return builder.AddScheme<HmacAuthenticationSchemeOptions, HmacAuthenticationHandler>(authenticationScheme, displayName, configureOptions);
         }
     }
