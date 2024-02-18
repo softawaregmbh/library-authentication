@@ -5,14 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace softaware.Authentication.Hmac.AspNetCore.Test
 {
-    public class TestWebApplicationFactory : WebApplicationFactory<TestStartup>
+    public class TestWebApplicationFactory(Action<HmacAuthenticationSchemeOptions> configureOptions)
+        : WebApplicationFactory<TestStartup>
     {
-        private readonly Action<HmacAuthenticationSchemeOptions> configureOptions;
-
-        public TestWebApplicationFactory(Action<HmacAuthenticationSchemeOptions> configureOptions)
-        {
-            this.configureOptions = configureOptions;
-        }
+        private readonly Action<HmacAuthenticationSchemeOptions> configureOptions = configureOptions;
 
         protected override IWebHostBuilder CreateWebHostBuilder()
         {

@@ -7,14 +7,10 @@ using softaware.Authentication.Hmac.AuthorizationProvider;
 
 namespace softaware.Authentication.Hmac.AspNetCore.Test
 {
-    public class TestWebApplicationFactoryWithDefaultAuthorizationProvider : WebApplicationFactory<TestStartup>
+    public class TestWebApplicationFactoryWithDefaultAuthorizationProvider(IDictionary<string, string> hmacAuthenticatedApps)
+        : WebApplicationFactory<TestStartup>
     {
-        private readonly IDictionary<string, string> hmacAuthenticatedApps;
-
-        public TestWebApplicationFactoryWithDefaultAuthorizationProvider(IDictionary<string, string> hmacAuthenticatedApps)
-        {
-            this.hmacAuthenticatedApps = hmacAuthenticatedApps ?? throw new ArgumentNullException(nameof(hmacAuthenticatedApps));
-        }
+        private readonly IDictionary<string, string> hmacAuthenticatedApps = hmacAuthenticatedApps ?? throw new ArgumentNullException(nameof(hmacAuthenticatedApps));
 
         protected override IWebHostBuilder CreateWebHostBuilder()
         {

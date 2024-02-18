@@ -5,14 +5,10 @@ using softaware.Authentication.Basic.AspNetCore.AuthorizationProvider;
 
 namespace softaware.Authentication.Basic.AspNetCore.Test
 {
-    public class TestWebApplicationFactory : WebApplicationFactory<TestStartup>
+    public class TestWebApplicationFactory(IBasicAuthorizationProvider basicAuthorizationProvider)
+        : WebApplicationFactory<TestStartup>
     {
-        private readonly IBasicAuthorizationProvider basicAuthorizationProvider;
-
-        public TestWebApplicationFactory(IBasicAuthorizationProvider basicAuthorizationProvider)
-        {
-            this.basicAuthorizationProvider = basicAuthorizationProvider;
-        }
+        private readonly IBasicAuthorizationProvider basicAuthorizationProvider = basicAuthorizationProvider;
 
         protected override IWebHostBuilder CreateWebHostBuilder()
         {

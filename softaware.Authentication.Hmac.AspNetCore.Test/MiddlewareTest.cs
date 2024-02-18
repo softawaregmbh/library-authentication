@@ -82,7 +82,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
@@ -94,7 +94,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "http");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
 
             var response = await client.GetAsync("api/test");
-            Assert.True(response.StatusCode == HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
         [Theory]
@@ -241,7 +241,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 handlers.Add(new RemoveHashingMethodDelegatingHandler());
             }
 
-            return factory.CreateDefaultClient(handlers.ToArray());
+            return factory.CreateDefaultClient([.. handlers]);
         }
 
         private static HttpClient GetHttpClientWithHmacAutenticatedAppsOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
@@ -250,6 +250,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             {
                 o.HmacAuthenticatedApps = hmacAuthenticatedApps;
             });
+
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
 

@@ -16,7 +16,9 @@ using softaware.Authentication.Hmac.Client;
 
 namespace softaware.Authentication.Hmac.AspNetCore
 {
-    internal class HmacAuthenticationHandler : AuthenticationHandler<HmacAuthenticationSchemeOptions>
+    internal class HmacAuthenticationHandler(
+        IOptionsMonitor<HmacAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+        : AuthenticationHandler<HmacAuthenticationSchemeOptions>(options, logger, encoder)
     {
         private class ValidationResult
         {
@@ -30,11 +32,6 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private readonly IMemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions());
 
-        public HmacAuthenticationHandler(IOptionsMonitor<HmacAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
-            : base(options, logger, encoder, clock)
-        {
-        }
-
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (this.Options.AuthorizationProvider == null)
@@ -42,7 +39,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 throw new ArgumentException($"{nameof(this.Options.AuthorizationProvider)} in the options is absolutely necessary.");
             }
 
-            if (!this.Request.Headers.TryGetValue("Authorization", out var authorization))
+            if (!this.Request.Headers.TryGetValue("Authorization", out _))
             {
                 return AuthenticateResult.Fail("Missing 'Authorization' header.");
             }
@@ -51,7 +48,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             if (validationResult.Valid)
             {
-                var claimsToSet = new Claim[] { new Claim(ClaimTypes.NameIdentifier, validationResult.Username) };
+                var claimsToSet = new Claim[] { new(ClaimTypes.NameIdentifier, validationResult.Username) };
 
                 var principal = new ClaimsPrincipal(new ClaimsIdentity(claimsToSet, HmacAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role));
                 var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), this.Options.AuthenticationScheme);
@@ -125,20 +122,18 @@ namespace softaware.Authentication.Hmac.AspNetCore
             var requestContentBase64String = ComputeRequestBodyBase64Hash(body, values.RequestBodyHashingMethod);
 
             var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
-            using (var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes))
-            {
-                var computedSignature = ComputeBase64Signature(
-                    values.AppId,
-                    requestHttpMethod,
-                    requestUri,
-                    values.RequestTimeStamp,
-                    values.Nonce,
-                    requestContentBase64String,
-                    hmac);
+            using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
+            var computedSignature = ComputeBase64Signature(
+                values.AppId,
+                requestHttpMethod,
+                requestUri,
+                values.RequestTimeStamp,
+                values.Nonce,
+                requestContentBase64String,
+                hmac);
 
-                var isValid = values.IncomingBase64Signature.Equals(computedSignature, StringComparison.Ordinal);
-                return isValid;
-            }
+            var isValid = values.IncomingBase64Signature.Equals(computedSignature, StringComparison.Ordinal);
+            return isValid;
         }
 
         private static string ComputeBase64Signature(
@@ -226,44 +221,38 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private static string ComputeRequestBodyBase64Hash(byte[] body, RequestBodyHashingMethod requestBodyHashingMethod)
         {
-            using (var hashAlgorithm = requestBodyHashingMethod.CreateHashAlgorithm())
+            using var hashAlgorithm = requestBodyHashingMethod.CreateHashAlgorithm();
+
+            if (body.Length != 0)
             {
-                if (body.Length != 0)
-                {
-                    var hash = hashAlgorithm.ComputeHash(body);
-                    return Convert.ToBase64String(hash);
-                }
-                else
-                {
-                    return string.Empty;
-                }
+                var hash = hashAlgorithm.ComputeHash(body);
+                return Convert.ToBase64String(hash);
+            }
+            else
+            {
+                return string.Empty;
             }
         }
 
-        private class HmacAuthenticationHeaderValues
+        private class HmacAuthenticationHeaderValues(
+            HmacHashingMethod hmacHashingMethod,
+            RequestBodyHashingMethod requestBodyHashingMethod,
+            string appId,
+            string incomingBase64Signature,
+            string nonce,
+            string requestTimeStamp)
         {
-            public HmacAuthenticationHeaderValues(
-                HmacHashingMethod hmacHashingMethod,
-                RequestBodyHashingMethod requestBodyHashingMethod,
-                string appId,
-                string incomingBase64Signature,
-                string nonce,
-                string requestTimeStamp)
-            {
-                HmacHashingMethod = hmacHashingMethod;
-                RequestBodyHashingMethod = requestBodyHashingMethod;
-                AppId = appId;
-                IncomingBase64Signature = incomingBase64Signature;
-                Nonce = nonce;
-                RequestTimeStamp = requestTimeStamp;
-            }
+            public HmacHashingMethod HmacHashingMethod { get; } = hmacHashingMethod;
 
-            public HmacHashingMethod HmacHashingMethod { get; }
-            public RequestBodyHashingMethod RequestBodyHashingMethod { get; }
-            public string AppId { get; }
-            public string IncomingBase64Signature { get; }
-            public string Nonce { get; }
-            public string RequestTimeStamp { get; }
+            public RequestBodyHashingMethod RequestBodyHashingMethod { get; } = requestBodyHashingMethod;
+
+            public string AppId { get; } = appId;
+
+            public string IncomingBase64Signature { get; } = incomingBase64Signature;
+
+            public string Nonce { get; } = nonce;
+
+            public string RequestTimeStamp { get; } = requestTimeStamp;
         }
     }
 }
