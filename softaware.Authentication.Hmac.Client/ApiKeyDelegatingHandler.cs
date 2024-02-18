@@ -71,15 +71,20 @@ namespace softaware.Authentication.Hmac.Client
             // create random nonce for each request
             var nonce = Guid.NewGuid().ToString("N");
 
-            // Checking if the request contains body, usually will be null wiht HTTP GET and DELETE
+            // Checking if the request contains body, usually will be null with HTTP GET and DELETE
             if (request.Content != null)
             {
                 var content = await request.Content.ReadAsByteArrayAsync();
-                using (var hashAlgorithm = this.requestBodyHashingMethod.CreateHashAlgorithm())
+
+                // Only calculate hash if content is not empty.
+                if (content.Length > 0)
                 {
-                    // Hashing the request body, any change in request body will result in different hash, we'll incure message integrity
-                    var requestContentHash = hashAlgorithm.ComputeHash(content);
-                    requestContentBase64String = Convert.ToBase64String(requestContentHash);
+                    using (var hashAlgorithm = this.requestBodyHashingMethod.CreateHashAlgorithm())
+                    {
+                        // Hashing the request body, any change in request body will result in different hash, we'll incure message integrity
+                        var requestContentHash = hashAlgorithm.ComputeHash(content);
+                        requestContentBase64String = Convert.ToBase64String(requestContentHash);
+                    }
                 }
             }
 

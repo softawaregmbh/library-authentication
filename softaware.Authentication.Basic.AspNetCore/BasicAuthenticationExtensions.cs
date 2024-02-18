@@ -20,7 +20,7 @@ namespace softaware.Authentication.Basic.AspNetCore
 
         public static AuthenticationBuilder AddBasicAuthentication(this AuthenticationBuilder builder, string authenticationScheme, string displayName, Action<BasicAuthenticationSchemeOptions> configureOptions)
         {
-            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<BasicAuthenticationSchemeOptions>, BasicAuthenticationPostConfigureOptions>());
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Transient<IPostConfigureOptions<BasicAuthenticationSchemeOptions>, BasicAuthenticationPostConfigureOptions>());
             return builder.AddScheme<BasicAuthenticationSchemeOptions, BasicAuthenticationHandler>(authenticationScheme, displayName, configureOptions);
         }
     }
