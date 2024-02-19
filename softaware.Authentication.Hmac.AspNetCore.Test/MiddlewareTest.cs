@@ -263,7 +263,7 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
         {
             var factory = new TestWebApplicationFactory(o =>
             {
-                o.HmacAuthenticatedApps = hmacAuthenticatedApps;
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
             });
 
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
