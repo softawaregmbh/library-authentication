@@ -6,12 +6,8 @@ using Microsoft.Extensions.Logging;
 
 namespace softaware.Authentication.Basic.AspNetCore.Test
 {
-    public class TestStartup
+    public class TestStartup(IWebHostEnvironment env)
     {
-        public TestStartup(IWebHostEnvironment env)
-        {
-        }
-
         /// <summary>
         ///  This method gets called by the runtime. Use this method to add services to the container.
         /// </summary>

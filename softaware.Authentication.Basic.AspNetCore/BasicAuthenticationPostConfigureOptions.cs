@@ -3,14 +3,10 @@ using softaware.Authentication.Basic.AspNetCore.AuthorizationProvider;
 
 namespace softaware.Authentication.Basic.AspNetCore
 {
-    public class BasicAuthenticationPostConfigureOptions : IPostConfigureOptions<BasicAuthenticationSchemeOptions>
+    public class BasicAuthenticationPostConfigureOptions(IBasicAuthorizationProvider basicAuthorizationProvider = null)
+        : IPostConfigureOptions<BasicAuthenticationSchemeOptions>
     {
-        private readonly IBasicAuthorizationProvider basicAuthorizationProvider;
-
-        public BasicAuthenticationPostConfigureOptions(IBasicAuthorizationProvider basicAuthorizationProvider = null)
-        {
-            this.basicAuthorizationProvider = basicAuthorizationProvider;
-        }
+        private readonly IBasicAuthorizationProvider basicAuthorizationProvider = basicAuthorizationProvider;
 
         public void PostConfigure(string name, BasicAuthenticationSchemeOptions options)
         {

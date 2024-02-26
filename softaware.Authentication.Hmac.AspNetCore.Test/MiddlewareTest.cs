@@ -256,15 +256,16 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
                 handlers.Add(new RemoveHashingMethodDelegatingHandler());
             }
 
-            return factory.CreateDefaultClient(handlers.ToArray());
+            return factory.CreateDefaultClient([.. handlers]);
         }
 
         private static HttpClient GetHttpClientWithHmacAutenticatedAppsOption(IDictionary<string, string> hmacAuthenticatedApps, string appId, string apiKey)
         {
             var factory = new TestWebApplicationFactory(o =>
             {
-                o.HmacAuthenticatedApps = hmacAuthenticatedApps;
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
             });
+
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
 

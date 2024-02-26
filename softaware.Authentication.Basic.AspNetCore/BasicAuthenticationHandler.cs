@@ -13,7 +13,9 @@ using softaware.Authentication.Basic.AspNetCore;
 
 namespace softaware.Authentication.Hmac.AspNetCore
 {
-    internal class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticationSchemeOptions>
+    internal class BasicAuthenticationHandler(
+        IOptionsMonitor<BasicAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+        : AuthenticationHandler<BasicAuthenticationSchemeOptions>(options, logger, encoder)
     {
         private class ValidationResult
         {
@@ -22,11 +24,6 @@ namespace softaware.Authentication.Hmac.AspNetCore
             public string Username { get; set; }
 
             public string Password { get; set; }
-        }
-
-        public BasicAuthenticationHandler(IOptionsMonitor<BasicAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
-            : base(options, logger, encoder, clock)
-        {
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -51,13 +48,13 @@ namespace softaware.Authentication.Hmac.AspNetCore
             if (validationResult.Valid)
             {
                 var claimsToSet = new List<Claim> 
-                { 
-                    new Claim(ClaimTypes.NameIdentifier, validationResult.Username) 
+                {
+                    new(ClaimTypes.NameIdentifier, validationResult.Username)
                 };
 
                 if (this.Options.AddPasswordAsClaim)
                 {
-                    claimsToSet.Add(new Claim(this.Options.PasswordClaimType, validationResult.Password));
+                    claimsToSet.Add(new(this.Options.PasswordClaimType, validationResult.Password));
                 }
 
                 var principal = new ClaimsPrincipal(new ClaimsIdentity(claimsToSet, BasicAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role));
