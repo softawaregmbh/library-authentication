@@ -8,7 +8,7 @@
 	<Authors>softaware gmbh</Authors>
 	<Company>softaware gmbh</Company>
 	<Description>A library which adds support for SAS token authentication in ASP.NET Core projects.</Description>
-	<Version>1.0.1</Version>
+	<Version>1.0.2</Version>
 	<RepositoryUrl>https://github.com/softawaregmbh/library-authentication</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
 	<PackageTags>softaware, authentication, SAS, AspNetCore</PackageTags>
