@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Primitives;
 using softaware.Authentication.SasToken.KeyProvider;
 using softaware.Authentication.SasToken.Models;
 
@@ -7,34 +8,36 @@ namespace softaware.Authentication.SasToken.Generators
 {
     public class SasTokenSignatureGenerator(IKeyProvider keyProvider)
     {
+        /// <param name="endpoint">The endpoint of the URI starting with a leading "/".</param>
         public Task<string> GenerateAsync(
+            string endpoint,
             DateTime startTime,
             DateTime endTime,
-            SasTokenType sasTokenType,
-            string endpoint,
-            string[] queryParameters,
+            QueryParameterHandlingType queryParameterHandlingType,
+            IDictionary<string, StringValues> queryParameters,
             CancellationToken cancellationToken)
-            => GenerateAsync(startTime, endTime, sasTokenType, SasTokenVersion.Version1, endpoint, queryParameters, cancellationToken);
+            => GenerateAsync(endpoint, startTime, endTime, queryParameterHandlingType, queryParameters, SasTokenVersion.Version1, cancellationToken);
 
+        /// <param name="endpoint">The endpoint of the URI starting with a leading "/".</param>
         public async Task<string> GenerateAsync(
+            string endpoint,
             DateTime startTime,
             DateTime endTime,
-            SasTokenType sasTokenType,
+            QueryParameterHandlingType queryParameterHandlingType,
+            IDictionary<string, StringValues> queryParameters,
             int sasTokenVersion,
-            string endpoint,
-            string[] queryParameters,
             CancellationToken cancellationToken)
         {
             var stringToSign =
                 $"rn{startTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture)}" +
                 $"/n{endTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture)}" +
-                $"/{sasTokenType}" +
+                $"/{queryParameterHandlingType}" +
                 $"/{sasTokenVersion}" +
                 $"/{endpoint}";
 
             if (queryParameters != null)
             {
-                stringToSign += $"/{string.Join("/", queryParameters)}/n";
+                stringToSign += $"/{string.Join("/", queryParameters.Select(q => $"{q.Key}={q.Value}"))}/n";
             }
 
             var key = await keyProvider.GetKeyAsync(cancellationToken);

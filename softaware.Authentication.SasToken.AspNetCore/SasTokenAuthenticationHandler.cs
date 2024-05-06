@@ -1,9 +1,11 @@
-﻿using System.Security.Claims;
+﻿using System.Collections.Immutable;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using softaware.Authentication.SasToken.Generators;
 using softaware.Authentication.SasToken.Models;
 
@@ -16,6 +18,7 @@ namespace softaware.Authentication.SasToken.AspNetCore
         SasTokenSignatureGenerator sasTokenSignatureGenerator)
         : AuthenticationHandler<SasTokenAuthenticationSchemeOptions>(options, logger, encoder)
     {
+        private static readonly string[] sasQueryParameters = ["sv", "st", "se", "sq", "sp", "sig"];
         private readonly SasTokenSignatureGenerator sasTokenSignatureGenerator = sasTokenSignatureGenerator;
 
         protected async override Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -57,23 +60,20 @@ namespace softaware.Authentication.SasToken.AspNetCore
                 return false;
             }
 
-            if (!queryString.TryGetValue("stt", out var typeQueryValue))
+            if (!queryString.TryGetValue("sq", out var typeQueryValue))
             {
                 return false;
             }
 
-            SasTokenType sasTokenType;
-            if (typeQueryValue == "f")
-            {
-                sasTokenType = SasTokenType.ConsiderAllQueryParameters;
-            }
-            else if (typeQueryValue == "p")
-            {
-                sasTokenType = SasTokenType.IgnoreAdditionalQueryParameters;
-            }
-            else
+            if (!QueryParameterHandlingTypeExtensions.TryGetQueryParameterHandlingType(typeQueryValue.ToString(), out var queryParameterHandlingType))
             {
                 return false;
+            }
+
+            var knownParameterKeys = new HashSet<string>();
+            if (queryString.TryGetValue("sp", out var spQueryValue))
+            {
+                knownParameterKeys = spQueryValue.ToString().Split(',').ToHashSet();
             }
 
             if (!queryString.TryGetValue("sig", out var requestHash))
@@ -82,29 +82,41 @@ namespace softaware.Authentication.SasToken.AspNetCore
             }
 
             var generatedHash = await this.sasTokenSignatureGenerator.GenerateAsync(
+                request.Path,
                 startDate,
                 endDate,
-                sasTokenType,
-                request.Path,
-                GetAdditionalQueryParametersDependingOnType(request, sasTokenType),
+                queryParameterHandlingType,
+                GetAdditionalQueryParametersDependingOnType(request, queryParameterHandlingType, knownParameterKeys),
                 cancellationToken);
 
             return requestHash.ToString().Replace(" ", "+") == generatedHash;
         }
 
-        private static string[] GetAdditionalQueryParametersDependingOnType(HttpRequest request, SasTokenType sasTokenType)
+        private static Dictionary<string, StringValues> GetAdditionalQueryParametersDependingOnType(
+            HttpRequest request,
+            QueryParameterHandlingType queryParameterHandlingType,
+            ISet<string> knownParameterKeys)
         {
-            return sasTokenType switch
+            return queryParameterHandlingType switch
             {
-                SasTokenType.ConsiderAllQueryParameters => GetAdditionalQueryParameters(request),
-                SasTokenType.IgnoreAdditionalQueryParameters => [],
-                _ => throw new NotSupportedException($"{nameof(sasTokenType)} {sasTokenType} is not supported."),
+                // In Allow case we only consider the known query parameters when calculating the signature.
+                QueryParameterHandlingType.AllowAdditionalQueryParameters => GetKnownQueryParameters(request, knownParameterKeys),
+
+                // In Deny case, we need to get all query parameters when calculating the signature to ensure that no additional parameters are present.
+                QueryParameterHandlingType.DenyAdditionalQueryParameters => GetAllQueryParameters(request),
+
+                _ => throw new NotSupportedException($"{nameof(queryParameterHandlingType)} {queryParameterHandlingType} is not supported."),
             };
         }
 
-        private static string[] GetAdditionalQueryParameters(HttpRequest request) =>
+        private static Dictionary<string, StringValues> GetAllQueryParameters(HttpRequest request) =>
             request.Query
-                .Where(s => s.Key != "sv" && s.Key != "st" && s.Key != "se" && s.Key != "stt" && s.Key != "sig").Select(s => $"{s.Key}={s.Value}")
-                .ToArray();
+                .Where(s => !sasQueryParameters.Contains(s.Key))
+                .ToDictionary(q => q.Key, q => q.Value);
+
+        private static Dictionary<string, StringValues> GetKnownQueryParameters(HttpRequest request, ISet<string> knownParameterKeys) =>
+            request.Query
+                .Where(s => knownParameterKeys.Contains(s.Key))
+                .ToDictionary(q => q.Key, q => q.Value);
     }
 }

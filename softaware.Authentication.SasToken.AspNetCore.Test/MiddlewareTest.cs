@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 using softaware.Authentication.SasToken.AspNetCore.Test;
 using softaware.Authentication.SasToken.Generators;
 using softaware.Authentication.SasToken.KeyProvider;
@@ -26,7 +27,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_Authorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", [], DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), SasToken.Models.SasTokenType.IgnoreAdditionalQueryParameters, CancellationToken.None);
+            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
 
             await this.TestRequestAsync(
                 relativeUrl,
@@ -36,7 +37,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_EndDateReached_NotAuthorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", [], DateTime.UtcNow.AddMinutes(-10), DateTime.UtcNow.AddMinutes(-5), SasToken.Models.SasTokenType.IgnoreAdditionalQueryParameters, CancellationToken.None);
+            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", DateTime.UtcNow.AddMinutes(-10), DateTime.UtcNow.AddMinutes(-5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
 
             await this.TestRequestAsync(
                 relativeUrl,
@@ -46,7 +47,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_InvalidSignature_NotAuthorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", [], DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), SasToken.Models.SasTokenType.IgnoreAdditionalQueryParameters, CancellationToken.None);
+            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
             var queryDict = QueryHelpers.ParseQuery(new Uri("https://" + relativeUrl).Query);
             queryDict["sig"] = queryDict["sig"] + "invalid";
 
@@ -61,51 +62,40 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInSignature_NotProvidedInUrl_NotAuthorized()
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", ["parameter=1"], DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), SasToken.Models.SasTokenType.ConsiderAllQueryParameters, CancellationToken.None) +
-                "&missing-parameter=1";
+                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", new Dictionary<string, StringValues> { ["parameter"] = new StringValues("1") }, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
 
             await this.TestRequestAsync(
                 relativeUrl,
                 HttpStatusCode.Unauthorized);
         }
 
-        [Fact]
-        public async Task Request_AdditionalParameterInUrl_NotProvidedInSignature_IgnoreAdditionalQueryParameters_Authorized()
+        [Theory]
+        [InlineData("1", "1", HttpStatusCode.OK)]
+        [InlineData("1", "2", HttpStatusCode.Unauthorized)]
+        [InlineData("2", "1", HttpStatusCode.Unauthorized)]
+        public async Task Request_AdditionalParameterInUrl_ProvidedInSignature(string parameterValueInSignature, string parameterValueInUrl, HttpStatusCode expectedStatusCode)
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", [], DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), SasTokenType.IgnoreAdditionalQueryParameters, CancellationToken.None) +
-                "&parameter=1";
+                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", new Dictionary<string, StringValues> { ["parameter"] = new StringValues(parameterValueInSignature) }, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None) +
+                $"&parameter={parameterValueInUrl}";
 
             await this.TestRequestAsync(
                 relativeUrl,
-                HttpStatusCode.OK);
+                expectedStatusCode);
         }
 
-        [Fact]
-        public async Task Request_AdditionalParameterInUrl_NotProvidedInSignature_ConsiderAllQueryParameters_NotAuthorized()
+        [Theory]
+        [InlineData(QueryParameterHandlingType.DenyAdditionalQueryParameters, HttpStatusCode.Unauthorized)]
+        [InlineData(QueryParameterHandlingType.AllowAdditionalQueryParameters, HttpStatusCode.NoContent)]
+        public async Task Request_AdditionalParameterInUrl_NotProvidedInSignature(QueryParameterHandlingType queryParameterHandlingType, HttpStatusCode expectedStatusCode)
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", [], DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), SasTokenType.ConsiderAllQueryParameters, CancellationToken.None) +
-                "&parameter=1";
+                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", new Dictionary<string, StringValues> { ["parameter1"] = new StringValues("1") }, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), queryParameterHandlingType, CancellationToken.None) +
+                "&parameter1=1&parameter2=2";
 
             await this.TestRequestAsync(
                 relativeUrl,
-                HttpStatusCode.Unauthorized);
-        }
-
-        [Fact]
-        public async Task Request_AdditionalParameter_NotIgnored_Authorized()
-        {
-            var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", ["parameter=1"], DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), SasToken.Models.SasTokenType.ConsiderAllQueryParameters, CancellationToken.None) +
-                "&parameter=1";
-
-            var response = await this.TestRequestAsync(
-                relativeUrl,
-                HttpStatusCode.OK);
-
-            var content = await response.Content.ReadAsStringAsync();
-            Assert.Equal("1", content);
+                expectedStatusCode);
         }
 
         private async Task<HttpResponseMessage> TestRequestAsync(
