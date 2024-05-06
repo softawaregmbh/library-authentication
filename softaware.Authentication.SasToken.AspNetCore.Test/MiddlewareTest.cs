@@ -27,7 +27,12 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_Authorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
+            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync(
+                "/api/test",
+                DateTime.UtcNow,
+                DateTime.UtcNow.AddMinutes(5),
+                QueryParameterHandlingType.DenyAdditionalQueryParameters,
+                CancellationToken.None);
 
             await this.TestRequestAsync(
                 relativeUrl,
@@ -37,7 +42,12 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_EndDateReached_NotAuthorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", DateTime.UtcNow.AddMinutes(-10), DateTime.UtcNow.AddMinutes(-5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
+            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync(
+                "/api/test",
+                DateTime.UtcNow.AddMinutes(-10),
+                DateTime.UtcNow.AddMinutes(-5),
+                QueryParameterHandlingType.DenyAdditionalQueryParameters,
+                CancellationToken.None);
 
             await this.TestRequestAsync(
                 relativeUrl,
@@ -47,7 +57,13 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_InvalidSignature_NotAuthorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
+            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync(
+                "/api/test",
+                DateTime.UtcNow,
+                DateTime.UtcNow.AddMinutes(5),
+                QueryParameterHandlingType.DenyAdditionalQueryParameters,
+                CancellationToken.None);
+
             var queryDict = QueryHelpers.ParseQuery(new Uri("https://" + relativeUrl).Query);
             queryDict["sig"] = queryDict["sig"] + "invalid";
 
@@ -62,11 +78,36 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInSignature_NotProvidedInUrl_NotAuthorized()
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", new Dictionary<string, StringValues> { ["parameter"] = new StringValues("1") }, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None);
+                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                    "/api/test",
+                    new Dictionary<string, StringValues> { ["parameter"] = new StringValues("1") },
+                    DateTime.UtcNow,
+                    DateTime.UtcNow.AddMinutes(5),
+                    QueryParameterHandlingType.DenyAdditionalQueryParameters,
+                    appendQueryParameters: false,
+                    CancellationToken.None);
 
             await this.TestRequestAsync(
                 relativeUrl,
                 HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Request_AdditionalParameterInSignature_AutomaticallyAppended_Authorized()
+        {
+            var relativeUrl = "api/test" +
+                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                    "/api/test",
+                    new Dictionary<string, StringValues> { ["parameter"] = new StringValues("1") },
+                    DateTime.UtcNow,
+                    DateTime.UtcNow.AddMinutes(5),
+                    QueryParameterHandlingType.DenyAdditionalQueryParameters,
+                    appendQueryParameters: true,
+                    CancellationToken.None);
+
+            await this.TestRequestAsync(
+                relativeUrl,
+                HttpStatusCode.OK);
         }
 
         [Theory]
@@ -76,7 +117,14 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInUrl_ProvidedInSignature(string parameterValueInSignature, string parameterValueInUrl, HttpStatusCode expectedStatusCode)
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", new Dictionary<string, StringValues> { ["parameter"] = new StringValues(parameterValueInSignature) }, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), QueryParameterHandlingType.DenyAdditionalQueryParameters, CancellationToken.None) +
+                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                    "/api/test",
+                    new Dictionary<string, StringValues> { ["parameter"] = new StringValues(parameterValueInSignature) },
+                    DateTime.UtcNow,
+                    DateTime.UtcNow.AddMinutes(5),
+                    QueryParameterHandlingType.DenyAdditionalQueryParameters,
+                    appendQueryParameters: false,
+                    CancellationToken.None) +
                 $"&parameter={parameterValueInUrl}";
 
             await this.TestRequestAsync(
@@ -90,7 +138,14 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInUrl_NotProvidedInSignature(QueryParameterHandlingType queryParameterHandlingType, HttpStatusCode expectedStatusCode)
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync("/api/test", new Dictionary<string, StringValues> { ["parameter1"] = new StringValues("1") }, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), queryParameterHandlingType, CancellationToken.None) +
+                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                    "/api/test",
+                    new Dictionary<string, StringValues> { ["parameter1"] = new StringValues("1") },
+                    DateTime.UtcNow,
+                    DateTime.UtcNow.AddMinutes(5),
+                    queryParameterHandlingType,
+                    appendQueryParameters: false,
+                    CancellationToken.None) +
                 "&parameter1=1&parameter2=2";
 
             await this.TestRequestAsync(
