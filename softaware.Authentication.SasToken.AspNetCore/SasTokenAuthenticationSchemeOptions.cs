@@ -7,8 +7,6 @@ namespace softaware.Authentication.SasToken.AspNetCore
     {
         public string AuthenticationScheme { get; set; }
 
-        public SasTokenSignatureGenerator SignatureGenerator { get; set; }
-
         public SasTokenAuthenticationSchemeOptions()
         {
             this.AuthenticationScheme = SasTokenAuthenticationDefaults.AuthenticationScheme;
@@ -17,7 +15,6 @@ namespace softaware.Authentication.SasToken.AspNetCore
         public SasTokenAuthenticationSchemeOptions(SasTokenSignatureGenerator signatureGenerator)
         {
             this.AuthenticationScheme = SasTokenAuthenticationDefaults.AuthenticationScheme;
-            this.SignatureGenerator = signatureGenerator;
         }
     }
 }

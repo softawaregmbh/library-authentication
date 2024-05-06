@@ -1,21 +1,19 @@
 ﻿using Microsoft.Extensions.Options;
-using softaware.Authentication.SasToken.Generators;
+using softaware.Authentication.SasToken.KeyProvider;
 
 namespace softaware.Authentication.SasToken.AspNetCore
 {
-    public class SasTokenAuthenticationPostConfigureOptions(SasTokenSignatureGenerator? signatureGenerator = null)
+    public class SasTokenAuthenticationPostConfigureOptions(IKeyProvider? keyProvider = null)
         : IPostConfigureOptions<SasTokenAuthenticationSchemeOptions>
     {
-        private readonly SasTokenSignatureGenerator? signatureGenerator = signatureGenerator;
+        private readonly IKeyProvider? keyProvider = keyProvider;
 
         public void PostConfigure(string? name, SasTokenAuthenticationSchemeOptions options)
         {
-            if (this.signatureGenerator == null)
+            if (this.keyProvider == null)
             {
-                throw new InvalidOperationException($"A {nameof(SasTokenSignatureGenerator)} must be registered in the dependency injection container.");
+                throw new InvalidOperationException($"An {nameof(IKeyProvider)} must be registered in the dependency injection container.");
             }
-
-            options.SignatureGenerator = this.signatureGenerator;
         }
     }
 }

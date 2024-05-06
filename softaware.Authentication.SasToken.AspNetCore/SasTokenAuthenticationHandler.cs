@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using softaware.Authentication.SasToken.Generators;
 using softaware.Authentication.SasToken.Models;
 
 namespace softaware.Authentication.SasToken.AspNetCore
@@ -11,9 +12,12 @@ namespace softaware.Authentication.SasToken.AspNetCore
     public class SasTokenAuthenticationHandler(
         IOptionsMonitor<SasTokenAuthenticationSchemeOptions> options,
         ILoggerFactory logger,
-        UrlEncoder encoder)
+        UrlEncoder encoder,
+        SasTokenSignatureGenerator sasTokenSignatureGenerator)
         : AuthenticationHandler<SasTokenAuthenticationSchemeOptions>(options, logger, encoder)
     {
+        private readonly SasTokenSignatureGenerator sasTokenSignatureGenerator = sasTokenSignatureGenerator;
+
         protected async override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (await this.ValidateAsync(this.Request, CancellationToken.None))
@@ -77,7 +81,7 @@ namespace softaware.Authentication.SasToken.AspNetCore
                 return false;
             }
 
-            var generatedHash = await this.Options.SignatureGenerator.GenerateAsync(
+            var generatedHash = await this.sasTokenSignatureGenerator.GenerateAsync(
                 startDate,
                 endDate,
                 sasTokenType,

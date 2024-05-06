@@ -10,10 +10,31 @@ namespace softaware.Authentication.SasToken.AspNetCore
         /// Adds the SAS token authentication.
         /// An <see cref="SasToken.KeyProvider.IKeyProvider"/> must be registered in the dependency injection container.
         /// </summary>
+        public static AuthenticationBuilder AddSasTokenAuthentication(this AuthenticationBuilder builder)
+            => builder.AddSasTokenAuthentication(SasTokenAuthenticationDefaults.AuthenticationScheme, _ => { });
+
+        /// <summary>
+        /// Adds the SAS token authentication.
+        /// An <see cref="SasToken.KeyProvider.IKeyProvider"/> must be registered in the dependency injection container.
+        /// </summary>
+        public static AuthenticationBuilder AddSasTokenAuthentication(this AuthenticationBuilder builder, Action<SasTokenAuthenticationSchemeOptions> configureOptions)
+            => builder.AddSasTokenAuthentication(SasTokenAuthenticationDefaults.AuthenticationScheme, configureOptions);
+
+        /// <summary>
+        /// Adds the SAS token authentication.
+        /// An <see cref="SasToken.KeyProvider.IKeyProvider"/> must be registered in the dependency injection container.
+        /// </summary>
+        public static AuthenticationBuilder AddSasTokenAuthentication(this AuthenticationBuilder builder, string authenticationScheme, Action<SasTokenAuthenticationSchemeOptions> configureOptions)
+            => builder.AddSasTokenAuthentication(authenticationScheme, displayName: null, configureOptions);
+
+        /// <summary>
+        /// Adds the SAS token authentication.
+        /// An <see cref="SasToken.KeyProvider.IKeyProvider"/> must be registered in the dependency injection container.
+        /// </summary>
         public static AuthenticationBuilder AddSasTokenAuthentication(
             this AuthenticationBuilder builder,
             string authenticationScheme,
-            string displayName,
+            string? displayName,
             Action<SasTokenAuthenticationSchemeOptions> configureOptions)
         {
             builder.Services.AddTransient<SasTokenUrlGenerator>();
