@@ -5,10 +5,11 @@ using softaware.Authentication.SasToken.KeyProvider;
 
 namespace softaware.Authentication.SasToken.AspNetCore.Test
 {
-    public class TestWebApplicationFactory(IKeyProvider keyProvider)
+    public class TestWebApplicationFactory(IKeyProvider keyProvider, string? nameIdentifierQueryParameter)
         : WebApplicationFactory<TestStartup>
     {
         private readonly IKeyProvider keyProvider = keyProvider;
+        private readonly string? nameIdentifierQueryParameter = nameIdentifierQueryParameter;
 
         protected override IWebHostBuilder CreateWebHostBuilder()
         {
@@ -25,7 +26,10 @@ namespace softaware.Authentication.SasToken.AspNetCore.Test
                 {
                     o.DefaultScheme = SasTokenAuthenticationDefaults.AuthenticationScheme;
                 })
-                .AddSasTokenAuthentication();
+                .AddSasTokenAuthentication(o =>
+                {
+                    o.NameIdentifierQueryParameter = nameIdentifierQueryParameter;
+                });
             });
         }
     }

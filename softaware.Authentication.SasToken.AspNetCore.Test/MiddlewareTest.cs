@@ -18,7 +18,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public MiddlewareTest()
         {
             var keyProvider = new MemoryKeyProvider("key");
-            this.webAppFactory = new TestWebApplicationFactory(keyProvider);
+            this.webAppFactory = new TestWebApplicationFactory(keyProvider, nameIdentifierQueryParameter: null);
 
             this.urlGenerator = this.webAppFactory.Services.GetRequiredService<SasTokenUrlGenerator>();
             this.httpClient = this.webAppFactory.CreateDefaultClient();
@@ -27,7 +27,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_Authorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync(
+            var relativeUrl = "api/test" + await this.urlGenerator.GenerateSasTokenQueryStringAsync(
                 "/api/test",
                 DateTime.UtcNow,
                 DateTime.UtcNow.AddMinutes(5),
@@ -42,7 +42,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_EndDateReached_NotAuthorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync(
+            var relativeUrl = "api/test" + await this.urlGenerator.GenerateSasTokenQueryStringAsync(
                 "/api/test",
                 DateTime.UtcNow.AddMinutes(-10),
                 DateTime.UtcNow.AddMinutes(-5),
@@ -57,7 +57,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public async Task Request_InvalidSignature_NotAuthorized()
         {
-            var relativeUrl = "api/test" + await urlGenerator.GenerateSasTokenQueryStringAsync(
+            var relativeUrl = "api/test" + await this.urlGenerator.GenerateSasTokenQueryStringAsync(
                 "/api/test",
                 DateTime.UtcNow,
                 DateTime.UtcNow.AddMinutes(5),
@@ -78,7 +78,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInSignature_NotProvidedInUrl_NotAuthorized()
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                await this.urlGenerator.GenerateSasTokenQueryStringAsync(
                     "/api/test",
                     new Dictionary<string, StringValues> { ["parameter"] = new StringValues("1") },
                     DateTime.UtcNow,
@@ -96,7 +96,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInSignature_AutomaticallyAppended_Authorized()
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                await this.urlGenerator.GenerateSasTokenQueryStringAsync(
                     "/api/test",
                     new Dictionary<string, StringValues> { ["parameter"] = new StringValues("1") },
                     DateTime.UtcNow,
@@ -117,7 +117,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInUrl_ProvidedInSignature(string parameterValueInSignature, string parameterValueInUrl, HttpStatusCode expectedStatusCode)
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                await this.urlGenerator.GenerateSasTokenQueryStringAsync(
                     "/api/test",
                     new Dictionary<string, StringValues> { ["parameter"] = new StringValues(parameterValueInSignature) },
                     DateTime.UtcNow,
@@ -138,7 +138,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public async Task Request_AdditionalParameterInUrl_NotProvidedInSignature(QueryParameterHandlingType queryParameterHandlingType, HttpStatusCode expectedStatusCode)
         {
             var relativeUrl = "api/test" +
-                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                await this.urlGenerator.GenerateSasTokenQueryStringAsync(
                     "/api/test",
                     new Dictionary<string, StringValues> { ["parameter1"] = new StringValues("1") },
                     DateTime.UtcNow,
@@ -153,11 +153,48 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
                 expectedStatusCode);
         }
 
-        private async Task<HttpResponseMessage> TestRequestAsync(
+        [Theory]
+        [InlineData("name", "value", "value")]
+        [InlineData(null, null, "")]
+        public async Task Request_NameIdentifierOption(
+            string? nameIdentifierQueryParameterKey, string? nameIdentifierQueryParameterValue, string expectedNameClaimValue)
+        {
+            using var webAppFactory = new TestWebApplicationFactory(new MemoryKeyProvider("key"), nameIdentifierQueryParameterKey);
+            var urlGenerator = webAppFactory.Services.GetRequiredService<SasTokenUrlGenerator>();
+            using var httpClient = webAppFactory.CreateDefaultClient();
+
+            var queryParameters = new Dictionary<string, StringValues>();
+            if (nameIdentifierQueryParameterKey != null)
+            {
+                queryParameters.Add(nameIdentifierQueryParameterKey, nameIdentifierQueryParameterValue);
+            }
+
+            var relativeUrl = "api/test/name" +
+                await urlGenerator.GenerateSasTokenQueryStringAsync(
+                    "/api/test/name",
+                    queryParameters,
+                    DateTime.UtcNow,
+                    DateTime.UtcNow.AddMinutes(5));
+
+            var response = await TestRequestAsync(
+                httpClient,
+                relativeUrl,
+                expectedNameClaimValue != string.Empty ? HttpStatusCode.OK : HttpStatusCode.NoContent);
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.Equal(expectedNameClaimValue, body);
+        }
+
+        private Task<HttpResponseMessage> TestRequestAsync(
+            string relativeUrl,
+            HttpStatusCode expectedStatusCode) => TestRequestAsync(this.httpClient, relativeUrl, expectedStatusCode);
+
+        private static async Task<HttpResponseMessage> TestRequestAsync(
+            HttpClient httpClient,
             string relativeUrl,
             HttpStatusCode expectedStatusCode)
         {
-            var response = await this.httpClient.GetAsync(relativeUrl);
+            var response = await httpClient.GetAsync(relativeUrl);
             Assert.Equal(expectedStatusCode, response.StatusCode);
 
             return response;

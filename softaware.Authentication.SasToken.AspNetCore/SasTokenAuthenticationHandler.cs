@@ -26,7 +26,13 @@ namespace softaware.Authentication.SasToken.AspNetCore
             if (await this.ValidateAsync(this.Request, CancellationToken.None))
             {
                 var identity = new ClaimsIdentity(SasTokenAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role);
-                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, this.Request.Query["sig"]!));
+
+                if (!string.IsNullOrEmpty(this.Options.NameIdentifierQueryParameter) &&
+                    this.Request.Query.TryGetValue(this.Options.NameIdentifierQueryParameter, out var nameIdentifierQueryParameterValue))
+                {
+                    identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, nameIdentifierQueryParameterValue.ToString()));
+                }
+
                 var principal = new ClaimsPrincipal(identity);
                 var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), this.Options.AuthenticationScheme);
                 return AuthenticateResult.Success(ticket);

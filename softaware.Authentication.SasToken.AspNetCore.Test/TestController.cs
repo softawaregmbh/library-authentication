@@ -11,5 +11,11 @@ namespace softaware.Authentication.SasToken.AspNetCore.Test
         {
             return this.Ok(parameter);
         }
+
+        [Route("Name")]
+        public ActionResult GetName()
+        {
+            return this.Ok(this.User.Identity?.Name);
+        }
     }
 }
