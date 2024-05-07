@@ -39,9 +39,16 @@ namespace softaware.Authentication.SasToken.Generators
                 $"?sv={SasTokenVersion.Version1}&" +
                 $"st={startTime.ToString("s", CultureInfo.InvariantCulture)}&" +
                 $"se={endTime.ToString("s", CultureInfo.InvariantCulture)}&" +
-                $"sq={QueryParameterHandlingTypeExtensions.GetQueryParameterValue(queryParameterHandlingType)}&" +
-                $"sp={string.Join(",", queryParameters.Keys)}&" +
-                $"sig={signature}";
+                $"sq={QueryParameterHandlingTypeExtensions.GetQueryParameterValue(queryParameterHandlingType)}&";
+
+            if (queryParameterHandlingType == QueryParameterHandlingType.AllowAdditionalQueryParameters)
+            {
+                // The known query parameters are only needed if we allow additional query parameters to be appended so that we know
+                // which query parameters need to be considered when calculating the signature.
+                sasQueryString += $"sp={string.Join(",", queryParameters.Keys)}&";
+            }
+
+            sasQueryString += $"sig={signature}";
 
             if (appendQueryParameters && queryParameters.Any())
             {
