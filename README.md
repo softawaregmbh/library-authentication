@@ -2,13 +2,16 @@
 
 <!-- TOC -->
 
+- [softaware.Authentication](#softawareauthentication)
   - [softaware.Authentication.Hmac](#softawareauthenticationhmac)
-      - [softaware.Authentication.Hmac.AspNetCore](#softawareauthenticationhmacaspnetcore)
-      - [softaware.Authentication.Hmac.Client](#softawareauthenticationhmacclient)
-      - [Generate HMAC AppId and ApiKey](#generate-hmac-appid-and-apikey)
+    - [softaware.Authentication.Hmac.AspNetCore](#softawareauthenticationhmacaspnetcore)
+    - [softaware.Authentication.Hmac.Client](#softawareauthenticationhmacclient)
+    - [Generate HMAC AppId and ApiKey](#generate-hmac-appid-and-apikey)
   - [softaware.Authentication.Basic](#softawareauthenticationbasic)
-      - [softaware.Authentication.Basic.AspNetCore](#softawareauthenticationbasicaspnetcore)
-      - [softaware.Authentication.Basic.Client](#softawareauthenticationbasicclient)
+    - [softaware.Authentication.Basic.AspNetCore](#softawareauthenticationbasicaspnetcore)
+    - [softaware.Authentication.Basic.Client](#softawareauthenticationbasicclient)
+  - [softaware.Authentication.SasToken](#softawareauthenticationsastoken)
+    - [softaware.Authentication.SasToken.AspNetCore](#softawareauthenticationsastokenaspnetcore)
 
 <!-- /TOC -->
 
@@ -18,7 +21,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/softaware.Authentication.Hmac.AspNetCore)](https://www.nuget.org/packages/softaware.Authentication.Hmac.AspNetCore)
 
-Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1?view=aspnetcore-2.1) which supports [HMAC](https://en.wikipedia.org/wiki/HMAC) authentication in an ASP.NET Core project.
+Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1) which supports [HMAC](https://en.wikipedia.org/wiki/HMAC) authentication in an ASP.NET Core project.
 
 Usage:
 
@@ -99,7 +102,7 @@ Make sure, that you don't create new `HttpClient` instances for every request (s
 new HttpClient(new ApiKeyDelegatingHandler(appId, apiKey));
 ```
 
-Or in case your WebAPI client is another ASP.NET WebAPI (>= [ASP.NET Core 2.1](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.httpclientfactoryservicecollectionextensions.addhttpclient?view=aspnetcore-2.1)), register your `HttpClient` in the `Startup.cs` for example as follows:
+Or in case your WebAPI client is another ASP.NET WebAPI (>= [ASP.NET Core 2.1](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.httpclientfactoryservicecollectionextensions.addhttpclient)), register your `HttpClient` in the `Startup.cs` for example as follows:
 
 ```csharp
 services.AddTransient(sp => new ApiKeyDelegatingHandler(appId, apiKey));
@@ -144,7 +147,7 @@ public class Program
 
 [![Nuget](https://img.shields.io/nuget/v/softaware.Authentication.Basic.AspNetCore)](https://www.nuget.org/packages/softaware.Authentication.Basic.AspNetCore)
 
-Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1?view=aspnetcore-2.1) which supports [Basic](https://en.wikipedia.org/wiki/Basic_access_authentication) authentication in an ASP.NET Core project.
+Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1) which supports [Basic](https://en.wikipedia.org/wiki/Basic_access_authentication) authentication in an ASP.NET Core project.
 
 Enable Basic authentication in `Startup.cs` in the `ConfigureServices` method:
 
@@ -178,3 +181,33 @@ Make sure, that you don't create new `HttpClient` instances for every request (s
 ```csharp
 new HttpClient(new BasicAuthenticationDelegatingHandler(username, password));
 ```
+
+## softaware.Authentication.SasToken
+
+### softaware.Authentication.SasToken.AspNetCore
+
+[![Nuget](https://img.shields.io/nuget/v/softaware.Authentication.SasToken.AspNetCore)](https://www.nuget.org/packages/softaware.Authentication.SasToken.AspNetCore)
+
+Provides an [`AuthenticationHandler`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.authenticationhandler-1) which supports Shared Access Signature (SAS) authentication in an ASP.NET Core project.
+
+Enable SAS authentication in `Startup.cs` in the `ConfigureServices` method:
+
+```csharp
+services.AddTransient<IKeyProvider>(_ => new MemoryKeyProvider(key));
+
+services
+    .AddAuthentication(o =>
+    {
+        o.DefaultScheme = SasTokenAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddSasTokenAuthentication();
+```
+
+If you want to retrieve the key for the shared access signature other than from the built-in `MemoryKeyProvider`, you can implement and register your own `IKeyProvider`.
+
+Enable Authentication in `Startup.cs` in the `Configure` method:
+```csharp
+app.UseAuthentication();
+```
+
+To generate an URL with a Shared Access Signature, inject the `SasTokenUrlGenerator` and call the `GenerateSasTokenQueryStringAsync(...)` method for getting the SAS query string or `GenerateSasTokenUriAsync(...)` method to receive the full SAS URI.
