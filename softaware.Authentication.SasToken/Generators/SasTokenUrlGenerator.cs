@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Globalization;
+using System.Web;
 using Microsoft.Extensions.Primitives;
 using softaware.Authentication.SasToken.Models;
 
@@ -22,6 +23,7 @@ namespace softaware.Authentication.SasToken.Generators
                 appendQueryParameters: false,
                 cancellationToken);
 
+        /// <param name="queryParameters">Additional query parameters. There is no need for the caller to URL encode the parameters. This is done here for you.</param>
         /// <param name="endpoint">The endpoint of the URI starting with a leading "/".</param>
         /// <param name="appendQueryParameters"><see langword="true"/>, if the provided query parameters should be appended to the query string.</param>
         public async Task<string> GenerateSasTokenQueryStringAsync(
@@ -52,7 +54,7 @@ namespace softaware.Authentication.SasToken.Generators
 
             if (appendQueryParameters && queryParameters.Any())
             {
-                var queryParametersString = string.Join("&", queryParameters.Select(q => $"{q.Key}={q.Value}"));
+                var queryParametersString = string.Join("&", queryParameters.Select(q => $"{q.Key}={HttpUtility.UrlEncode(q.Value)}"));
                 sasQueryString += $"&{queryParametersString}";
             }
 
@@ -79,6 +81,7 @@ namespace softaware.Authentication.SasToken.Generators
 
         /// <param name="baseUrl">The base url <strong>without</strong> trailing "/".</param>
         /// <param name="endpoint">The endpoint of the URI starting with a leading "/".</param>
+        /// <param name="queryParameters">Additional query parameters. There is no need for the caller to URL encode the parameters. This is done here for you.</param>
         /// <param name="appendQueryParameters"><see langword="true"/>, if the provided query parameters should be appended to the query string.</param>
         public async Task<Uri> GenerateSasTokenUriAsync(
             string baseUrl,

@@ -110,6 +110,27 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
                 HttpStatusCode.OK);
         }
 
+        [Fact]
+        public async Task Request_AdditionalParameterInSignature_WithUrlEncodingOfAdditionalParameters_Authorized()
+        {
+            var relativeUrl = "api/test" +
+                await this.urlGenerator.GenerateSasTokenQueryStringAsync(
+                    "/api/test",
+                    new Dictionary<string, StringValues> { ["parameter"] = new StringValues("1 & 1") },
+                    DateTime.UtcNow,
+                    DateTime.UtcNow.AddMinutes(5),
+                    QueryParameterHandlingType.DenyAdditionalQueryParameters,
+                    appendQueryParameters: true,
+                    CancellationToken.None);
+
+            await this.TestRequestAsync(
+                relativeUrl,
+                HttpStatusCode.OK);
+
+            // Make sure that provided query parameters are URL encoded.
+            Assert.Contains("&parameter=1+%26+1", relativeUrl);
+        }
+
         [Theory]
         [InlineData("1", "1", HttpStatusCode.OK)]
         [InlineData("1", "2", HttpStatusCode.Unauthorized)]
