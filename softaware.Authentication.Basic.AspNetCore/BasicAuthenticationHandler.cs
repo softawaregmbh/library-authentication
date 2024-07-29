@@ -8,10 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using softaware.Authentication.Basic;
-using softaware.Authentication.Basic.AspNetCore;
 
-namespace softaware.Authentication.Hmac.AspNetCore
+namespace softaware.Authentication.Basic.AspNetCore
 {
     internal class BasicAuthenticationHandler(
         IOptionsMonitor<BasicAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
@@ -33,7 +31,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 throw new ArgumentException($"{nameof(this.Options.AuthorizationProvider)} is absolutely necessary.");
             }
 
-            if (!this.Request.Headers.TryGetValue("Authorization", out var authorization))
+            if (!Request.Headers.TryGetValue("Authorization", out var authorization))
             {
                 return AuthenticateResult.Fail("Missing 'Authorization' header.");
             }
@@ -47,7 +45,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             if (validationResult.Valid)
             {
-                var claimsToSet = new List<Claim> 
+                var claimsToSet = new List<Claim>
                 {
                     new(ClaimTypes.NameIdentifier, validationResult.Username)
                 };
@@ -76,16 +74,21 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 {
                     // Decode from Base64 to string
                     var decodedUsernamePassword = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationHeader.Parameter));
-                    // Split username and password
-                    var splittedUsernamePassword = decodedUsernamePassword.Split(':');
-                    if (splittedUsernamePassword.Length != 2) // username and password must set
+
+                    var indexOfFirstColon = decodedUsernamePassword.IndexOf(':');
+                    if (indexOfFirstColon == -1)
                     {
                         return result;
                     }
 
-                    result.Valid = await this.Options.AuthorizationProvider.IsAuthorizedAsync(splittedUsernamePassword[0], splittedUsernamePassword[1]);
-                    result.Username = splittedUsernamePassword[0];
-                    result.Password = splittedUsernamePassword[1];
+                    var username = decodedUsernamePassword[..indexOfFirstColon];
+                    var password = decodedUsernamePassword[(indexOfFirstColon + 1)..];
+
+                    result.Valid = await Options.AuthorizationProvider.IsAuthorizedAsync(
+                        username, password);
+
+                    result.Username = username;
+                    result.Password = password;
                 }
             }
 
