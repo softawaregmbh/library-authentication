@@ -17,6 +17,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [InlineData("username", "password1")]
         [InlineData("username", "$pas&sw!ord2")]
         [InlineData("username", ":iasztzistbff1512:")]
+        [InlineData("username", "iasztzi:stbff1512:")]
         public Task Request_MemoryProvider_Authorized(string username, string password)
         {
             return TestRequestAsync(
