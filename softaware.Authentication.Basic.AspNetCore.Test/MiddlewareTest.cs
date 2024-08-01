@@ -12,13 +12,18 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
 {
     public class MiddlewareTest
     {
-        [Fact]
-        public Task Request_MemoryProvider_Authorized()
+        [Theory]
+        [InlineData("username", "password")]
+        [InlineData("username", "password1")]
+        [InlineData("username", "$pas&sw!ord2")]
+        [InlineData("username", ":iasztzistbff1512:")]
+        [InlineData("username", "iasztzi:stbff1512:")]
+        public Task Request_MemoryProvider_Authorized(string username, string password)
         {
-            return this.TestRequestAsync(
-                new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
-                "username",
-                "password",
+            return TestRequestAsync(
+                new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { username, password } }),
+                username,
+                password,
                 HttpStatusCode.OK);
         }
 
@@ -28,7 +33,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [InlineData("wrongUsername", "wrongPassword")]
         public Task Request_MemoryProvider_Unauthorized(string username, string password)
         {
-            return this.TestRequestAsync(
+            return TestRequestAsync(
                 new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 username,
                 password,
@@ -38,7 +43,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [Fact]
         public Task Request_SecureMemoryProvider_Authorized()
         {
-            return this.TestRequestAsync(
+            return TestRequestAsync(
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 "username",
                 "password",
@@ -51,7 +56,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [InlineData("wrongUsername", "wrongPassword")]
         public Task Request_SecureMemoryProvider_Unauthorized(string username, string password)
         {
-            return this.TestRequestAsync(
+            return TestRequestAsync(
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 username,
                 password,
@@ -63,7 +68,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         {
             var username = "username";
 
-            var result = await this.TestRequestAsync(
+            var result = await TestRequestAsync(
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { username, "password" } }),
                 username,
                 "password",
@@ -80,7 +85,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         {
             var username = "username";
 
-            var result = await this.TestRequestAsync(
+            var result = await TestRequestAsync(
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { username, "password" } }),
                 username,
                 "password",
@@ -95,7 +100,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
             Assert.Equal(username, content[0].value.Value);
         }
 
-        private async Task<HttpResponseMessage> TestRequestAsync(
+        private static async Task<HttpResponseMessage> TestRequestAsync(
             IBasicAuthorizationProvider basicAuthorizationProvider,
             string username,
             string password,
@@ -103,12 +108,12 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
             string endpoint = "api/test")
         {
             using var client = GetHttpClient(
-                new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
+                basicAuthorizationProvider,
                 username,
                 password);
 
             var response = await client.GetAsync(endpoint);
-            Assert.True(response.StatusCode == expectedStatusCode);
+            Assert.Equal(response.StatusCode, expectedStatusCode);
 
             return response;
         }
