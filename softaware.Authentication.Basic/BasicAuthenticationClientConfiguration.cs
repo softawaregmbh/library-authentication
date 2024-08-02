@@ -1,9 +1,8 @@
-﻿namespace softaware.Authentication.Basic
-{
-    public class BasicAuthenticationClientConfiguration
-    {
-        public string Username { get; set; }
+﻿namespace softaware.Authentication.Basic;
 
-        public string Password { get; set; }
-    }
+public class BasicAuthenticationClientConfiguration
+{
+    public string Username { get; set; }
+
+    public string Password { get; set; }
 }

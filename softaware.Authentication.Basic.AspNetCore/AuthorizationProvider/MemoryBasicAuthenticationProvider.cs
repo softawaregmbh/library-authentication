@@ -2,22 +2,16 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace softaware.Authentication.Basic.AspNetCore.AuthorizationProvider
+namespace softaware.Authentication.Basic.AspNetCore.AuthorizationProvider;
+
+public class MemoryBasicAuthenticationProvider(IReadOnlyDictionary<string, string> credentials) : IBasicAuthorizationProvider
 {
-    public class MemoryBasicAuthenticationProvider : IBasicAuthorizationProvider
+    private readonly Dictionary<string, string> credentials = credentials.ToDictionary(c => c.Key, c => c.Value);
+
+    public Task<bool> IsAuthorizedAsync(string username, string password)
     {
-        private readonly IReadOnlyDictionary<string, string> credentials;
-
-        public MemoryBasicAuthenticationProvider(IReadOnlyDictionary<string, string> credentials)
-        {
-            this.credentials = credentials.ToDictionary(c => c.Key, c => c.Value);
-        }
-
-        public Task<bool> IsAuthorizedAsync(string username, string password)
-        {
-            return Task.FromResult(
-                this.credentials.TryGetValue(username, out var secureString) &&
-                password == secureString);
-        }
+        return Task.FromResult(
+            this.credentials.TryGetValue(username, out var secureString) &&
+            password == secureString);
     }
 }

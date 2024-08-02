@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace softaware.Authentication.Basic.AspNetCore.AuthorizationProvider
+namespace softaware.Authentication.Basic.AspNetCore.AuthorizationProvider;
+
+public interface IBasicAuthorizationProvider
 {
-    public interface IBasicAuthorizationProvider
-    {
-        Task<bool> IsAuthorizedAsync(string username, string password);
-    }
+    Task<bool> IsAuthorizedAsync(string username, string password);
 }
