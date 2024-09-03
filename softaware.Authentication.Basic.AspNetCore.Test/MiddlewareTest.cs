@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using softaware.Authentication.Basic.AspNetCore.AuthorizationProvider;
@@ -16,15 +17,33 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         [InlineData("username", "password")]
         [InlineData("username", "password1")]
         [InlineData("username", "$pas&sw!ord2")]
-        [InlineData("username", ":iasztzistbff1512:")]
-        [InlineData("username", "iasztzi:stbff1512:")]
+        [InlineData("username", ":iasZtzistbff1512:")]
+        [InlineData("username", "$asZtz$stbff1512$")]
+        [InlineData("username", "?asZtz?stbff1512?")]
+        [InlineData("username", "§asZtz§stbff1512§")]
+        [InlineData("username", "!asZtz!stbff1512!")]
+        [InlineData("username", "}\"asZtz\"stbff1512\"")]
+        [InlineData("username", "}()$%&/(W§$%($(&$$%$/$/%&$%&(%&(&%/")]
         public Task Request_MemoryProvider_Authorized(string username, string password)
         {
             return TestRequestAsync(
                 new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { username, password } }),
                 username,
                 password,
-                HttpStatusCode.OK);
+                HttpStatusCode.OK,
+                Encoding.UTF8);
+        }
+
+        [Theory]
+        [InlineData("username", "§asZtz§stbff1512§")]
+        public Task Request_MemoryProvider_Wrong_Encoding_Unauthorized(string username, string password)
+        {
+            return TestRequestAsync(
+                new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { username, password } }),
+                username,
+                password,
+                HttpStatusCode.Unauthorized,
+                Encoding.ASCII);
         }
 
         [Theory]
@@ -37,7 +56,8 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
                 new MemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 username,
                 password,
-                HttpStatusCode.Unauthorized);
+                HttpStatusCode.Unauthorized,
+                Encoding.UTF8);
         }
 
         [Fact]
@@ -47,7 +67,8 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 "username",
                 "password",
-                HttpStatusCode.OK);
+                HttpStatusCode.OK,
+                Encoding.UTF8);
         }
 
         [Theory]
@@ -60,7 +81,8 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
                 new SecureMemoryBasicAuthenticationProvider(new Dictionary<string, string>() { { "username", "password" } }),
                 username,
                 password,
-                HttpStatusCode.Unauthorized);
+                HttpStatusCode.Unauthorized,
+                Encoding.UTF8);
         }
 
         [Fact]
@@ -73,6 +95,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
                 username,
                 "password",
                 HttpStatusCode.OK,
+                Encoding.UTF8,
                 "api/test/name");
 
             var content = await result.Content.ReadAsStringAsync();
@@ -90,6 +113,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
                 username,
                 "password",
                 HttpStatusCode.OK,
+                Encoding.UTF8,
                 "api/test/claims");
 
             var contentAsString = await result.Content.ReadAsStringAsync();
@@ -105,12 +129,14 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
             string username,
             string password,
             HttpStatusCode expectedStatusCode,
+            Encoding encoding,
             string endpoint = "api/test")
         {
-            using var client = GetHttpClient(
+            using var client = GetHttpClientWithEncoding(
                 basicAuthorizationProvider,
                 username,
-                password);
+                password,
+                encoding);
 
             var response = await client.GetAsync(endpoint);
             Assert.Equal(response.StatusCode, expectedStatusCode);
@@ -118,11 +144,11 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
             return response;
         }
 
-        private static HttpClient GetHttpClient(
-            IBasicAuthorizationProvider basicAuthorizationProvider, string username, string password)
+        private static HttpClient GetHttpClientWithEncoding(
+            IBasicAuthorizationProvider basicAuthorizationProvider, string username, string password, Encoding encoding)
         {
             var factory = new TestWebApplicationFactory(basicAuthorizationProvider);
-            return factory.CreateDefaultClient(new BasicAuthenticationDelegatingHandler(username, password));
+            return factory.CreateDefaultClient(new BasicAuthenticationDelegatingHandler(username, password, encoding));
         }
     }
 }
