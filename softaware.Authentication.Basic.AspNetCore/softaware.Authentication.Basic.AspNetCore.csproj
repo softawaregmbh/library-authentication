@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Version>5.0.1</Version>
+    <Version>5.0.2</Version>
     <PackageProjectUrl>https://github.com/softawaregmbh/library-authentication</PackageProjectUrl>
     <RepositoryUrl>https://github.com/softawaregmbh/library-authentication</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -15,7 +15,7 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <PackageReleaseNotes>Hotfix if the user uses colon character in password</PackageReleaseNotes>
+    <PackageReleaseNotes>Use CryptographicOperations.FixedTimeEquals for password comparision to prevent timing attacks</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

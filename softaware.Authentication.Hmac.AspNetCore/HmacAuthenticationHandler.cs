@@ -123,7 +123,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
             using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
-            var computedSignature = ComputeBase64Signature(
+            var computedSignature = ComputeSignature(
                 values.AppId,
                 requestHttpMethod,
                 requestUri,
@@ -132,11 +132,11 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 requestContentBase64String,
                 hmac);
 
-            var isValid = values.IncomingBase64Signature.Equals(computedSignature, StringComparison.Ordinal);
+            var isValid = CryptographicOperations.FixedTimeEquals(values.IncomingSignature, computedSignature);
             return isValid;
         }
 
-        private static string ComputeBase64Signature(
+        private static byte[] ComputeSignature(
             string appId,
             string requestHttpMethod,
             string requestUri,
@@ -147,9 +147,9 @@ namespace softaware.Authentication.Hmac.AspNetCore
         {
             var data = $"{appId}{requestHttpMethod}{requestUri}{requestTimeStamp}{nonce}{requestContentBase64String}";
             var signature = Encoding.UTF8.GetBytes(data);
-            byte[] signatureBytes = hmac.ComputeHash(signature);
+            var signatureBytes = hmac.ComputeHash(signature);
 
-            return Convert.ToBase64String(signatureBytes);
+            return signatureBytes;
         }
 
         private static (bool IsValidHeader, HmacAuthenticationHeaderValues Values) GetAuthenticationValues(string rawAuthenticationHeader)
@@ -181,7 +181,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 hmacHashingMethod,
                 requestBodyHashingMethod,
                 appId,
-                incomingBase64Signature,
+                Convert.FromBase64String(incomingBase64Signature),
                 nonce,
                 requestTimeStamp);
 
@@ -238,7 +238,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
             HmacHashingMethod hmacHashingMethod,
             RequestBodyHashingMethod requestBodyHashingMethod,
             string appId,
-            string incomingBase64Signature,
+            byte[] incomingSignature,
             string nonce,
             string requestTimeStamp)
         {
@@ -248,7 +248,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             public string AppId { get; } = appId;
 
-            public string IncomingBase64Signature { get; } = incomingBase64Signature;
+            public byte[] IncomingSignature { get; } = incomingSignature;
 
             public string Nonce { get; } = nonce;
 
