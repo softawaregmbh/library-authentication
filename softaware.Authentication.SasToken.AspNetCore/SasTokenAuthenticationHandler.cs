@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using softaware.Authentication.SasToken.Validators;
 
 namespace softaware.Authentication.SasToken.AspNetCore
 {
@@ -17,7 +18,7 @@ namespace softaware.Authentication.SasToken.AspNetCore
 
         protected async override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (await sasTokenSignatureValidator.ValidateAsync(this.Request, CancellationToken.None))
+            if (await sasTokenSignatureValidator.ValidateAsync(this.Request.Path, this.Request.Query, CancellationToken.None))
             {
                 var identity = new ClaimsIdentity(SasTokenAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role);
 

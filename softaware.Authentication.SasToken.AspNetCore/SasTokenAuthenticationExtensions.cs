@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using softaware.Authentication.SasToken.Generators;
+using softaware.Authentication.SasToken.Validators;
 
 namespace softaware.Authentication.SasToken.AspNetCore
 {
