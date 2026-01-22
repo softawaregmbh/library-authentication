@@ -39,6 +39,7 @@ namespace softaware.Authentication.SasToken.AspNetCore
         {
             builder.Services.AddTransient<SasTokenUrlGenerator>();
             builder.Services.AddTransient<SasTokenSignatureGenerator>();
+            builder.Services.AddTransient<SasTokenSignatureValidator>();
 
             return builder.AddScheme<SasTokenAuthenticationSchemeOptions, SasTokenAuthenticationHandler>(authenticationScheme, displayName, configureOptions);
         }
