@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Primitives;
 using softaware.Authentication.SasToken.Generators;
 using softaware.Authentication.SasToken.Models;
-using System.Web;
 
 namespace softaware.Authentication.SasToken.Validators;
 
@@ -9,7 +8,10 @@ public class SasTokenSignatureValidator(SasTokenSignatureGenerator sasTokenSigna
 {
     private static readonly HashSet<string> sasQueryParameters = ["sv", "st", "se", "sq", "sp", "sig"];
 
-    public async Task<bool> ValidateAsync(string requestPath, IEnumerable<KeyValuePair<string, StringValues>> queryParameters, CancellationToken cancellationToken)
+    public async Task<bool> ValidateAsync(
+        string requestPath,
+        IEnumerable<KeyValuePair<string, StringValues>> queryParameters,
+        CancellationToken cancellationToken)
     {
         var queryParametersByKey = queryParameters.ToDictionary(p => p.Key, p => p.Value);
 

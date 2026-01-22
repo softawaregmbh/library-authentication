@@ -14,8 +14,6 @@ namespace softaware.Authentication.SasToken.AspNetCore
         SasTokenSignatureValidator sasTokenSignatureValidator)
         : AuthenticationHandler<SasTokenAuthenticationSchemeOptions>(options, logger, encoder)
     {
-        private static readonly string[] sasQueryParameters = ["sv", "st", "se", "sq", "sp", "sig"];
-
         protected async override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (await sasTokenSignatureValidator.ValidateAsync(this.Request.Path, this.Request.Query, CancellationToken.None))
