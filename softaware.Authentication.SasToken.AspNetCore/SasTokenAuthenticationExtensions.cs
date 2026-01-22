@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using softaware.Authentication.SasToken.Generators;
+using softaware.Authentication.SasToken.Validators;
 
 namespace softaware.Authentication.SasToken.AspNetCore
 {
@@ -37,10 +38,22 @@ namespace softaware.Authentication.SasToken.AspNetCore
             string? displayName,
             Action<SasTokenAuthenticationSchemeOptions> configureOptions)
         {
-            builder.Services.AddTransient<SasTokenUrlGenerator>();
-            builder.Services.AddTransient<SasTokenSignatureGenerator>();
+            builder.Services.AddSasTokenAuthenticationServices();
 
             return builder.AddScheme<SasTokenAuthenticationSchemeOptions, SasTokenAuthenticationHandler>(authenticationScheme, displayName, configureOptions);
+        }
+
+        /// <summary>
+        /// Adds the SAS token authentication services.
+        /// An <see cref="SasToken.KeyProvider.IKeyProvider"/> must be registered in the dependency injection container.
+        /// </summary>
+        public static IServiceCollection AddSasTokenAuthenticationServices(this IServiceCollection services)
+        {
+            services.AddTransient<SasTokenUrlGenerator>();
+            services.AddTransient<SasTokenSignatureGenerator>();
+            services.AddTransient<SasTokenSignatureValidator>();
+
+            return services;
         }
     }
 }
