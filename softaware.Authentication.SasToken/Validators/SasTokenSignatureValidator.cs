@@ -13,30 +13,30 @@ public class SasTokenSignatureValidator(SasTokenSignatureGenerator sasTokenSigna
         IEnumerable<KeyValuePair<string, StringValues>> queryParameters,
         CancellationToken cancellationToken)
     {
-        var queryParametersByKey = queryParameters.ToDictionary(p => p.Key, p => p.Value);
+        var queryParameterValuesByKey = queryParameters.ToDictionary(p => p.Key, p => p.Value);
 
-        if (!queryParametersByKey.TryGetValue("sv", out var sasTokenVersionQueryValue) ||
+        if (!queryParameterValuesByKey.TryGetValue("sv", out var sasTokenVersionQueryValue) ||
             !int.TryParse(sasTokenVersionQueryValue, out var sasTokenVersion) ||
             sasTokenVersion != SasTokenVersion.Version1)
         {
             return false;
         }
 
-        if (!queryParametersByKey.TryGetValue("st", out var startDateQueryValue) ||
+        if (!queryParameterValuesByKey.TryGetValue("st", out var startDateQueryValue) ||
             !DateTime.TryParse(startDateQueryValue, out var startDate) ||
             DateTime.UtcNow < startDate)
         {
             return false;
         }
 
-        if (!queryParametersByKey.TryGetValue("se", out var endDateQueryValue) ||
+        if (!queryParameterValuesByKey.TryGetValue("se", out var endDateQueryValue) ||
             !DateTime.TryParse(endDateQueryValue, out var endDate) ||
             DateTime.UtcNow > endDate)
         {
             return false;
         }
 
-        if (!queryParametersByKey.TryGetValue("sq", out var typeQueryValue))
+        if (!queryParameterValuesByKey.TryGetValue("sq", out var typeQueryValue))
         {
             return false;
         }
@@ -47,12 +47,12 @@ public class SasTokenSignatureValidator(SasTokenSignatureGenerator sasTokenSigna
         }
 
         HashSet<string> knownParameterKeys = new();
-        if (queryParametersByKey.TryGetValue("sp", out var spQueryValue))
+        if (queryParameterValuesByKey.TryGetValue("sp", out var spQueryValue))
         {
             knownParameterKeys = [.. spQueryValue.ToString().Split(',')];
         }
 
-        if (!queryParametersByKey.TryGetValue("sig", out var requestHash))
+        if (!queryParameterValuesByKey.TryGetValue("sig", out var requestHash))
         {
             return false;
         }
@@ -62,41 +62,41 @@ public class SasTokenSignatureValidator(SasTokenSignatureGenerator sasTokenSigna
             startDate,
             endDate,
             queryParameterHandlingType,
-            GetAdditionalQueryParametersDependingOnType(queryParametersByKey, queryParameterHandlingType, knownParameterKeys),
+            GetAdditionalQueryParametersDependingOnType(queryParameterValuesByKey, queryParameterHandlingType, knownParameterKeys),
             cancellationToken);
 
         return requestHash.ToString().Replace(" ", "+") == generatedHash;
     }
 
     private static Dictionary<string, StringValues> GetAdditionalQueryParametersDependingOnType(
-        Dictionary<string, StringValues> queryParameters,
+        Dictionary<string, StringValues> queryParameterValuesByKey,
         QueryParameterHandlingType queryParameterHandlingType,
         ISet<string> knownParameterKeys)
     {
         return queryParameterHandlingType switch
         {
             // In Allow case we only consider the known query parameters when calculating the signature.
-            QueryParameterHandlingType.AllowAdditionalQueryParameters => GetKnownQueryParameters(queryParameters, knownParameterKeys),
+            QueryParameterHandlingType.AllowAdditionalQueryParameters => GetKnownQueryParameters(queryParameterValuesByKey, knownParameterKeys),
 
             // In Deny case, we need to get all query parameters when calculating the signature to ensure that no additional parameters are present.
-            QueryParameterHandlingType.DenyAdditionalQueryParameters => GetAllQueryParameters(queryParameters),
+            QueryParameterHandlingType.DenyAdditionalQueryParameters => GetAllQueryParameters(queryParameterValuesByKey),
 
             _ => throw new NotSupportedException($"{nameof(queryParameterHandlingType)} {queryParameterHandlingType} is not supported."),
         };
     }
 
     private static Dictionary<string, StringValues> GetAllQueryParameters(
-        Dictionary<string, StringValues> queryParameters
+        Dictionary<string, StringValues> queryParameterValuesByKey
     ) =>
-        queryParameters
+        queryParameterValuesByKey
             .Where(s => !sasQueryParameters.Contains(s.Key))
             .ToDictionary(q => q.Key, q => q.Value);
 
     private static Dictionary<string, StringValues> GetKnownQueryParameters(
-        Dictionary<string, StringValues> queryParameters,
+        Dictionary<string, StringValues> queryParameterValuesByKey,
         ISet<string> knownParameterKeys
     ) =>
-        queryParameters
+        queryParameterValuesByKey
             .Where(s => knownParameterKeys.Contains(s.Key))
             .ToDictionary(q => q.Key, q => q.Value);
 }
