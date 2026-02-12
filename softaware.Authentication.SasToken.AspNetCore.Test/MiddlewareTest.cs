@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
@@ -18,7 +19,7 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         public MiddlewareTest()
         {
             var keyProvider = new MemoryKeyProvider("key");
-            this.webAppFactory = new TestWebApplicationFactory(keyProvider, nameIdentifierQueryParameter: null);
+            this.webAppFactory = new TestWebApplicationFactory(keyProvider, claimsQueryParameters: []);
 
             this.urlGenerator = this.webAppFactory.Services.GetRequiredService<SasTokenUrlGenerator>();
             this.httpClient = this.webAppFactory.CreateDefaultClient();
@@ -175,12 +176,19 @@ namespace softaware.Authentication.Basic.AspNetCore.Test
         }
 
         [Theory]
-        [InlineData("name", "value", "value")]
-        [InlineData(null, null, "")]
+        [InlineData(ClaimTypes.NameIdentifier, "name", "value", "value")]
+        [InlineData(null, null, null, "")]
         public async Task Request_NameIdentifierOption(
-            string? nameIdentifierQueryParameterKey, string? nameIdentifierQueryParameterValue, string expectedNameClaimValue)
+            string? claimType, string? nameIdentifierQueryParameterKey, string? nameIdentifierQueryParameterValue, string expectedNameClaimValue)
         {
-            using var webAppFactory = new TestWebApplicationFactory(new MemoryKeyProvider("key"), nameIdentifierQueryParameterKey);
+            var claimsQueryParameters = new Dictionary<string, string>();
+
+            if (claimType != null && nameIdentifierQueryParameterKey != null)
+            {
+                claimsQueryParameters.Add(claimType, nameIdentifierQueryParameterKey);
+            }
+
+            using var webAppFactory = new TestWebApplicationFactory(new MemoryKeyProvider("key"), claimsQueryParameters);
             var urlGenerator = webAppFactory.Services.GetRequiredService<SasTokenUrlGenerator>();
             using var httpClient = webAppFactory.CreateDefaultClient();
 
