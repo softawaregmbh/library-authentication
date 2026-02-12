@@ -20,10 +20,12 @@ namespace softaware.Authentication.SasToken.AspNetCore
             {
                 var identity = new ClaimsIdentity(SasTokenAuthenticationDefaults.AuthenticationType, ClaimTypes.NameIdentifier, ClaimTypes.Role);
 
-                if (!string.IsNullOrEmpty(this.Options.NameIdentifierQueryParameter) &&
-                    this.Request.Query.TryGetValue(this.Options.NameIdentifierQueryParameter, out var nameIdentifierQueryParameterValue))
+                foreach (var kvp in this.Options.ClaimsQueryParameters)
                 {
-                    identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, nameIdentifierQueryParameterValue.ToString()));
+                    if (this.Request.Query.TryGetValue(kvp.Value, out var claimValue))
+                    {
+                        identity.AddClaim(new Claim(kvp.Key, claimValue.ToString()));
+                    }
                 }
 
                 var principal = new ClaimsPrincipal(identity);
