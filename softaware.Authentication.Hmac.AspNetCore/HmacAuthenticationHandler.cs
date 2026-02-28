@@ -72,21 +72,19 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
                     if (isValidHeader)
                     {
-                        // Note that we must not dispose the memoryStream here, because the stream is needed in subsequent handlers
-                        var memoryStream = new MemoryStream();
-
-                        await this.Request.Body.CopyToAsync(memoryStream);
-                        this.Request.Body = memoryStream;
+                        // Enable buffering so the body stream becomes seekable and can be read by subsequent handlers.
+                        // For small bodies the data is kept in memory; large bodies spill to a temporary file.
+                        request.EnableBuffering();
 
                         try
                         {
-                            result.Valid = await this.IsValidRequestAsync(request, memoryStream.ToArray(), values);
+                            result.Valid = await this.IsValidRequestAsync(request, values);
                             result.Username = values.AppId;
                         }
                         finally
                         {
                             // We need to reset the stream so that subsequent handlers have a fresh stream which they can consume.
-                            memoryStream.Seek(0, SeekOrigin.Begin);
+                            request.Body.Seek(0, SeekOrigin.Begin);
                         }
                     }
                 }
@@ -95,7 +93,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
             return result;
         }
 
-        private async Task<bool> IsValidRequestAsync(HttpRequest req, byte[] body, HmacAuthenticationHeaderValues values)
+        private async Task<bool> IsValidRequestAsync(HttpRequest req, HmacAuthenticationHeaderValues values)
         {
             var absoluteUri = string.Concat(
                         this.GetRequestScheme(req),
@@ -119,7 +117,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return false;
             }
 
-            var requestContentBase64String = ComputeRequestBodyBase64Hash(body, values.RequestBodyHashingMethod);
+            var requestContentBase64String = await ComputeRequestBodyBase64HashAsync(req.Body, values.RequestBodyHashingMethod);
 
             var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
             using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
@@ -219,19 +217,13 @@ namespace softaware.Authentication.Hmac.AspNetCore
             return req.Scheme;
         }
 
-        private static string ComputeRequestBodyBase64Hash(byte[] body, RequestBodyHashingMethod requestBodyHashingMethod)
+        private static async Task<string> ComputeRequestBodyBase64HashAsync(Stream body, RequestBodyHashingMethod requestBodyHashingMethod)
         {
             using var hashAlgorithm = requestBodyHashingMethod.CreateHashAlgorithm();
+            await hashAlgorithm.ComputeHashAsync(body);
 
-            if (body.Length != 0)
-            {
-                var hash = hashAlgorithm.ComputeHash(body);
-                return Convert.ToBase64String(hash);
-            }
-            else
-            {
-                return string.Empty;
-            }
+            // If no bytes were read (empty body), return empty string to match the behavior expected by the signature.
+            return body.Position > 0 ? Convert.ToBase64String(hashAlgorithm.Hash!) : string.Empty;
         }
 
         private class HmacAuthenticationHeaderValues(
