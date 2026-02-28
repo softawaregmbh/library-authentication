@@ -121,19 +121,26 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             var requestContentBase64String = ComputeRequestBodyBase64Hash(body, values.RequestBodyHashingMethod);
 
-            var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
-            using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
-            var computedSignature = ComputeSignature(
-                values.AppId,
-                requestHttpMethod,
-                requestUri,
-                values.RequestTimeStamp,
-                values.Nonce,
-                requestContentBase64String,
-                hmac);
+            foreach (var apiKey in authorizationProviderResult.ApiKeys)
+            {
+                var apiKeyBytes = Convert.FromBase64String(apiKey);
+                using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
+                var computedSignature = ComputeSignature(
+                    values.AppId,
+                    requestHttpMethod,
+                    requestUri,
+                    values.RequestTimeStamp,
+                    values.Nonce,
+                    requestContentBase64String,
+                    hmac);
 
-            var isValid = CryptographicOperations.FixedTimeEquals(values.IncomingSignature, computedSignature);
-            return isValid;
+                if (CryptographicOperations.FixedTimeEquals(values.IncomingSignature, computedSignature))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static byte[] ComputeSignature(
@@ -190,12 +197,6 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private bool IsReplayRequest(string nonce, string requestTimeStamp)
         {
-            var nonceInMemory = this.memoryCache.Get(nonce);
-            if (nonceInMemory != null)
-            {
-                return true;
-            }
-
             var serverTotalSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var requestTotalSeconds = Convert.ToInt64(requestTimeStamp);
             var diff = Math.Abs(serverTotalSeconds - requestTotalSeconds);
