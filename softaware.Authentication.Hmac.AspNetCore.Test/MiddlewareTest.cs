@@ -284,5 +284,108 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             });
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
+
+        private static HttpClient GetHttpClientWithMultipleKeys(
+            IDictionary<string, IList<string>> hmacAuthenticatedApps,
+            string appId,
+            string apiKey,
+            HmacHashingMethod hmacHashingMethod = HmacHashingMethod.HMACSHA256,
+            RequestBodyHashingMethod requestBodyHashingMethod = RequestBodyHashingMethod.SHA256)
+        {
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
+            });
+
+            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey, hmacHashingMethod, requestBodyHashingMethod));
+        }
+
+        #region Key Rotation Tests
+
+        private const string PrimaryKey = "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=";
+        private const string SecondaryKey = "YXJld3JzZHJkc2FhcndlZQ==";
+        private const string UnknownKey = "dGhpcyBpcyBhIHRlc3Qga2V5IQ==";
+
+        [Fact]
+        public async Task Request_KeyRotation_AuthorizedWithPrimaryKey()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                PrimaryKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_AuthorizedWithSecondaryKey()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                SecondaryKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_AuthorizedWithSecondaryKey_WithPostBody()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                SecondaryKey);
+
+            var response = await client.PostAsync("api/test", new StringContent("test-content"));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_UnauthorizedWithUnknownKey()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                UnknownKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_UnauthorizedWithWrongAppId()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "wrongAppId",
+                PrimaryKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task Request_KeyRotation_Authorized_AllHashingMethods(
+            [CombinatorialMemberData(nameof(GetHmacHashingMethods))] HmacHashingMethod hmacHashingMethod,
+            [CombinatorialMemberData(nameof(GetRequestBodyHashingMethods))] RequestBodyHashingMethod requestBodyHashingMethod,
+            [CombinatorialValues(true, false)] bool useSecondaryKey)
+        {
+            var clientKey = useSecondaryKey ? SecondaryKey : PrimaryKey;
+
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                clientKey,
+                hmacHashingMethod,
+                requestBodyHashingMethod);
+
+            var response = await client.PostAsync("api/test", new StringContent("test-content"));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        #endregion
     }
 }
