@@ -196,6 +196,12 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private bool IsReplayRequest(string nonce, string requestTimeStamp)
         {
+            var nonceInMemory = this.memoryCache.Get(nonce);
+            if (nonceInMemory != null)
+            {
+                return true;
+            }
+
             var serverTotalSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var requestTotalSeconds = Convert.ToInt64(requestTimeStamp);
             var diff = Math.Abs(serverTotalSeconds - requestTotalSeconds);
