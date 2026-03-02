@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using softaware.Authentication.Hmac.AuthorizationProvider;
@@ -299,6 +301,61 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
 
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey, hmacHashingMethod, requestBodyHashingMethod));
         }
+
+        #region Nonce Replay Protection Tests
+
+        [Fact]
+        public async Task Request_SameNonce_SecondRequest_Rejected()
+        {
+            var replayHandler = new ReplayAuthorizationDelegatingHandler();
+
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(
+                    new Dictionary<string, string> { { "appId", PrimaryKey } });
+            });
+
+            var client = factory.CreateDefaultClient(
+                new ApiKeyDelegatingHandler("appId", PrimaryKey),
+                replayHandler);
+
+            // First request should succeed; nonce is stored in the server's replay cache.
+            var firstResponse = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+            // Second request replays the identical Authorization header (same nonce).
+            // The server must reject it as a replay attack.
+            replayHandler.ReplayNextRequest = true;
+            var secondResponse = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.Unauthorized, secondResponse.StatusCode);
+        }
+
+        /// <summary>
+        /// A delegating handler that, when <see cref="ReplayNextRequest"/> is set, replaces the outgoing
+        /// Authorization header with the one captured from the first request (same nonce and timestamp).
+        /// </summary>
+        private class ReplayAuthorizationDelegatingHandler : DelegatingHandler
+        {
+            private AuthenticationHeaderValue capturedAuthorizationHeader;
+
+            public bool ReplayNextRequest { get; set; }
+
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (this.ReplayNextRequest && this.capturedAuthorizationHeader != null)
+                {
+                    request.Headers.Authorization = this.capturedAuthorizationHeader;
+                }
+
+                var response = await base.SendAsync(request, cancellationToken);
+
+                this.capturedAuthorizationHeader ??= request.Headers.Authorization;
+
+                return response;
+            }
+        }
+
+        #endregion
 
         #region Key Rotation Tests
 

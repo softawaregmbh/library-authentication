@@ -18,7 +18,7 @@ using softaware.Authentication.Hmac.Client;
 namespace softaware.Authentication.Hmac.AspNetCore
 {
     internal class HmacAuthenticationHandler(
-        IOptionsMonitor<HmacAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+        IOptionsMonitor<HmacAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, IMemoryCache memoryCache)
         : AuthenticationHandler<HmacAuthenticationSchemeOptions>(options, logger, encoder)
     {
         private class ValidationResult
@@ -31,7 +31,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
             public string Username { get; set; }
         }
 
-        private readonly IMemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions());
+        private readonly IMemoryCache memoryCache = memoryCache;
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
