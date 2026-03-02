@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
@@ -117,7 +118,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return false;
             }
 
-            var requestContentBase64String = await ComputeRequestBodyBase64HashAsync(req.Body, values.RequestBodyHashingMethod);
+            var requestContentBase64String = await ComputeRequestBodyBase64HashAsync(req.Body, values.RequestBodyHashingMethod, req.HttpContext.RequestAborted);
 
             var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
             using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
@@ -217,13 +218,14 @@ namespace softaware.Authentication.Hmac.AspNetCore
             return req.Scheme;
         }
 
-        private static async Task<string> ComputeRequestBodyBase64HashAsync(Stream body, RequestBodyHashingMethod requestBodyHashingMethod)
+        private static async Task<string> ComputeRequestBodyBase64HashAsync(Stream body, RequestBodyHashingMethod requestBodyHashingMethod, CancellationToken cancellationToken)
         {
             using var hashAlgorithm = requestBodyHashingMethod.CreateHashAlgorithm();
-            await hashAlgorithm.ComputeHashAsync(body);
+            var startPosition = body.Position;
+            var hash = await hashAlgorithm.ComputeHashAsync(body, cancellationToken);
 
             // If no bytes were read (empty body), return empty string to match the behavior expected by the signature.
-            return body.Position > 0 ? Convert.ToBase64String(hashAlgorithm.Hash!) : string.Empty;
+            return body.Position > startPosition ? Convert.ToBase64String(hash) : string.Empty;
         }
 
         private class HmacAuthenticationHeaderValues(
