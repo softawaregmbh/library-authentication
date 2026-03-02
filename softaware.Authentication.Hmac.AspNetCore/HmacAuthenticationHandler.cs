@@ -122,7 +122,16 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             foreach (var apiKey in authorizationProviderResult.ApiKeys)
             {
-                var apiKeyBytes = Convert.FromBase64String(apiKey);
+                byte[] apiKeyBytes;
+                try
+                {
+                    apiKeyBytes = Convert.FromBase64String(apiKey);
+                }
+                catch (FormatException)
+                {
+                    // Skip invalid Base64 API keys and continue with the next key.
+                    continue;
+                }
                 using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
                 var computedSignature = ComputeSignature(
                     values.AppId,
