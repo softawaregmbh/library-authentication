@@ -86,11 +86,11 @@ Each `*.Test` project follows the same structure:
 
 When adding tests, follow this same structure.
 
-## Known Build Warnings
+## NuGet Package Versioning
 
-The following compiler warnings are present in the codebase and are pre-existing (not caused by your changes):
-
-- `CS9113: Parameter 'env' is unread` in `TestStartup.cs` files of all three test projects. These are benign and expected.
+- NuGet package versions are maintained manually per project in the `.csproj` files using the `<Version>` attribute
+- The NuGet package versions follow semantic versioning. When updating a version (MAJOR.MINOR.PATCH), decide which version part to update to follow the semantic versioning (i.e. breaking changes, new features, or bugfixes)
+- The `<PackageReleaseNotes>` attribute in the `.csproj` file includes a very brief (maximum one line) summary of the changes in the latest version
 
 ## Errors and Workarounds
 
