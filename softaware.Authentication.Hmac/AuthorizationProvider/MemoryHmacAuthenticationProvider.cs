@@ -33,7 +33,7 @@ namespace softaware.Authentication.Hmac.AuthorizationProvider
 
             this.hmacAuthenticatedApps = hmacAuthenticatedApps.ToDictionary(
                 kvp => kvp.Key,
-                kvp => kvp.Value.ToArray());
+                kvp => kvp.Value?.ToArray() ?? Array.Empty<string>());
         }
 
         public Task<AuthorizationProviderResult> TryGetApiKeyAsync(string appId)
