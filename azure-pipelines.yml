@@ -4,7 +4,10 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
-- master
+  - main
+
+pr:
+  - main
 
 pool:
   vmImage: 'windows-latest'
@@ -30,6 +33,37 @@ steps:
     testResultsFormat: VSTest
     testResultsFiles: '**/*.trx'
 
+# On PR builds, fail if any NuGet package version already exists on nuget.org
+- powershell: |
+    $packages = Get-ChildItem -Path "$(Build.SourcesDirectory)" -Filter "*.nupkg" -Recurse
+    $failed = $false
+    foreach ($pkg in $packages) {
+      $name = [System.IO.Path]::GetFileNameWithoutExtension($pkg.Name)
+      if ($name -match '^(.+?)\.(\d+\.\d+\.\d+.*)$') {
+        $id = $matches[1]
+        $version = $matches[2]
+        Write-Host "Checking $id version $version on nuget.org..."
+        $url = "https://api.nuget.org/v3-flatcontainer/$($id.ToLower())/index.json"
+        try {
+          $response = Invoke-RestMethod -Uri $url -ErrorAction Stop
+          if ($response.versions -contains $version.ToLower()) {
+            Write-Host "##vso[task.logissue type=error]Package $id version $version already exists on nuget.org!"
+            $failed = $true
+          } else {
+            Write-Host "Package $id version $version is not yet published. OK."
+          }
+        } catch {
+          Write-Host "Package $id not found on nuget.org yet (new package). OK."
+        }
+      }
+    }
+    if ($failed) {
+      Write-Host "##vso[task.complete result=Failed;]One or more package versions already exist on nuget.org."
+      exit 1
+    }
+  displayName: 'Check NuGet versions do not already exist'
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+
 - task: CopyFiles@2
   inputs:
     TargetFolder: $(Build.ArtifactStagingDirectory)
@@ -37,3 +71,8 @@ steps:
     flattenFolders: true
 
 - task: PublishBuildArtifacts@1
+
+# Push to nuget.org only on commits to main
+- script: dotnet nuget push "$(Build.ArtifactStagingDirectory)/*.nupkg" --api-key $(NuGetApiKey) --source https://api.nuget.org/v3/index.json
+  displayName: 'Push NuGet packages to nuget.org'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
