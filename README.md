@@ -5,6 +5,7 @@
 - [softaware.Authentication](#softawareauthentication)
   - [softaware.Authentication.Hmac](#softawareauthenticationhmac)
     - [softaware.Authentication.Hmac.AspNetCore](#softawareauthenticationhmacaspnetcore)
+      - [Key Rotation](#key-rotation)
     - [softaware.Authentication.Hmac.Client](#softawareauthenticationhmacclient)
     - [Generate HMAC AppId and ApiKey](#generate-hmac-appid-and-apikey)
   - [softaware.Authentication.Basic](#softawareauthenticationbasic)
@@ -88,6 +89,51 @@ The `MemoryCache` is used by the HMAC `AuthenticationHandler` to determine repla
        // ...
     }
     ```
+
+#### Key Rotation
+
+Key rotation lets you replace an API key without any downtime. The server is configured to accept both the old and the new key simultaneously, so you can roll out the new key to all clients before removing the old one.
+
+**1. Add `ApiKeys` to `appsettings.json`**
+
+Instead of a single `ApiKey`, provide a list of keys under `ApiKeys`. All listed keys are accepted at the same time:
+
+```json
+{
+  "Authentication": {
+    "HmacAuthenticatedApps": [
+      {
+        "AppId": "<some-app-id>",
+        "ApiKeys": ["<new-api-key>", "<old-api-key>"]
+      }
+    ]
+  }
+}
+```
+
+**2. Register the provider with multiple keys**
+
+Use the `MemoryHmacAuthenticationProvider` overload that accepts `IDictionary<string, IList<string>>`:
+
+```csharp
+var hmacAuthenticatedApps = this.Configuration
+    .GetSection("Authentication")
+    .GetSection("HmacAuthenticatedApps")
+    .Get<HmacAuthenticationClientConfiguration[]>()
+    .ToDictionary(
+        e => e.AppId,
+        e => (IList<string>)(e.ApiKeys?.Count > 0 ? e.ApiKeys : new[] { e.ApiKey }));
+
+services.AddTransient<IHmacAuthorizationProvider>(
+    _ => new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps));
+```
+
+**3. Rotation procedure**
+
+1. Generate a new API key (see [Generate HMAC AppId and ApiKey](#generate-hmac-appid-and-apikey)).
+2. Add the new key to `ApiKeys` alongside the old key and deploy the server. Both keys are now accepted.
+3. Update all clients to sign requests with the new key and deploy them.
+4. Remove the old key from `ApiKeys` and redeploy the server.
 
 ### softaware.Authentication.Hmac.Client
 
