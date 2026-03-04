@@ -31,6 +31,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
             Action<HmacAuthenticationSchemeOptions> configureOptions)
         {
             builder.Services.TryAddEnumerable(ServiceDescriptor.Transient<IPostConfigureOptions<HmacAuthenticationSchemeOptions>, HmacAuthenticationPostConfigureOptions>());
+            builder.Services.AddMemoryCache();
             return builder.AddScheme<HmacAuthenticationSchemeOptions, HmacAuthenticationHandler>(authenticationScheme, displayName, configureOptions);
         }
     }
