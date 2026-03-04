@@ -31,8 +31,6 @@ namespace softaware.Authentication.Hmac.AspNetCore
             public string Username { get; set; }
         }
 
-        private readonly IMemoryCache memoryCache = memoryCache;
-
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (this.Options.AuthorizationProvider == null)
@@ -205,7 +203,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private bool IsReplayRequest(string nonce, string requestTimeStamp)
         {
-            var nonceInMemory = this.memoryCache.Get(nonce);
+            var nonceInMemory = memoryCache.Get(MemoryCacheKey(nonce));
             if (nonceInMemory != null)
             {
                 return true;
@@ -220,7 +218,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return true;
             }
 
-            this.memoryCache.Set(nonce, requestTimeStamp, DateTimeOffset.UtcNow.AddSeconds(this.Options.MaxRequestAgeInSeconds));
+            memoryCache.Set(MemoryCacheKey(nonce), requestTimeStamp, DateTimeOffset.UtcNow.AddSeconds(this.Options.MaxRequestAgeInSeconds));
             return false;
         }
 
@@ -264,5 +262,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             public string RequestTimeStamp { get; } = requestTimeStamp;
         }
+
+        private static string MemoryCacheKey(string nonce) => $"HmacAuthHandler_Nonce_{nonce}";
     }
 }
