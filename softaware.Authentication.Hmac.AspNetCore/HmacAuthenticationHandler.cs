@@ -18,7 +18,7 @@ using softaware.Authentication.Hmac.Client;
 namespace softaware.Authentication.Hmac.AspNetCore
 {
     internal class HmacAuthenticationHandler(
-        IOptionsMonitor<HmacAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+        IOptionsMonitor<HmacAuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, IMemoryCache memoryCache)
         : AuthenticationHandler<HmacAuthenticationSchemeOptions>(options, logger, encoder)
     {
         private class ValidationResult
@@ -30,8 +30,6 @@ namespace softaware.Authentication.Hmac.AspNetCore
             /// </summary>
             public string Username { get; set; }
         }
-
-        private readonly IMemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions());
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
@@ -120,19 +118,35 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             var requestContentBase64String = await ComputeRequestBodyBase64HashAsync(req.Body, values.RequestBodyHashingMethod, req.HttpContext.RequestAborted);
 
-            var apiKeyBytes = Convert.FromBase64String(authorizationProviderResult.ApiKey);
-            using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
-            var computedSignature = ComputeSignature(
-                values.AppId,
-                requestHttpMethod,
-                requestUri,
-                values.RequestTimeStamp,
-                values.Nonce,
-                requestContentBase64String,
-                hmac);
+            foreach (var apiKey in authorizationProviderResult.ApiKeys)
+            {
+                byte[] apiKeyBytes;
+                try
+                {
+                    apiKeyBytes = Convert.FromBase64String(apiKey);
+                }
+                catch (FormatException)
+                {
+                    // Skip invalid Base64 API keys and continue with the next key.
+                    continue;
+                }
+                using var hmac = values.HmacHashingMethod.CreateHmac(apiKeyBytes);
+                var computedSignature = ComputeSignature(
+                    values.AppId,
+                    requestHttpMethod,
+                    requestUri,
+                    values.RequestTimeStamp,
+                    values.Nonce,
+                    requestContentBase64String,
+                    hmac);
 
-            var isValid = CryptographicOperations.FixedTimeEquals(values.IncomingSignature, computedSignature);
-            return isValid;
+                if (CryptographicOperations.FixedTimeEquals(values.IncomingSignature, computedSignature))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static byte[] ComputeSignature(
@@ -189,7 +203,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
         private bool IsReplayRequest(string nonce, string requestTimeStamp)
         {
-            var nonceInMemory = this.memoryCache.Get(nonce);
+            var nonceInMemory = memoryCache.Get(MemoryCacheKey(nonce));
             if (nonceInMemory != null)
             {
                 return true;
@@ -204,7 +218,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
                 return true;
             }
 
-            this.memoryCache.Set(nonce, requestTimeStamp, DateTimeOffset.UtcNow.AddSeconds(this.Options.MaxRequestAgeInSeconds));
+            memoryCache.Set(MemoryCacheKey(nonce), requestTimeStamp, DateTimeOffset.UtcNow.AddSeconds(this.Options.MaxRequestAgeInSeconds));
             return false;
         }
 
@@ -248,5 +262,7 @@ namespace softaware.Authentication.Hmac.AspNetCore
 
             public string RequestTimeStamp { get; } = requestTimeStamp;
         }
+
+        private static string MemoryCacheKey(string nonce) => $"HmacAuthHandler_Nonce_{nonce}";
     }
 }

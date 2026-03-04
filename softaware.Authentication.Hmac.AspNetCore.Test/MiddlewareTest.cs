@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using softaware.Authentication.Hmac.AuthorizationProvider;
@@ -284,5 +286,163 @@ namespace softaware.Authentication.Hmac.AspNetCore.Test
             });
             return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey));
         }
+
+        private static HttpClient GetHttpClientWithMultipleKeys(
+            IDictionary<string, IList<string>> hmacAuthenticatedApps,
+            string appId,
+            string apiKey,
+            HmacHashingMethod hmacHashingMethod = HmacHashingMethod.HMACSHA256,
+            RequestBodyHashingMethod requestBodyHashingMethod = RequestBodyHashingMethod.SHA256)
+        {
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(hmacAuthenticatedApps);
+            });
+
+            return factory.CreateDefaultClient(new ApiKeyDelegatingHandler(appId, apiKey, hmacHashingMethod, requestBodyHashingMethod));
+        }
+
+        #region Nonce Replay Protection Tests
+
+        [Fact]
+        public async Task Request_SameNonce_SecondRequest_Rejected()
+        {
+            var replayHandler = new ReplayAuthorizationDelegatingHandler();
+
+            var factory = new TestWebApplicationFactory(o =>
+            {
+                o.AuthorizationProvider = new MemoryHmacAuthenticationProvider(
+                    new Dictionary<string, string> { { "appId", PrimaryKey } });
+            });
+
+            var client = factory.CreateDefaultClient(
+                new ApiKeyDelegatingHandler("appId", PrimaryKey),
+                replayHandler);
+
+            // First request should succeed; nonce is stored in the server's replay cache.
+            var firstResponse = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+            // Second request replays the identical Authorization header (same nonce).
+            // The server must reject it as a replay attack.
+            replayHandler.ReplayNextRequest = true;
+            var secondResponse = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.Unauthorized, secondResponse.StatusCode);
+        }
+
+        /// <summary>
+        /// A delegating handler that, when <see cref="ReplayNextRequest"/> is set, replaces the outgoing
+        /// Authorization header with the one captured from the first request (same nonce and timestamp).
+        /// </summary>
+        private class ReplayAuthorizationDelegatingHandler : DelegatingHandler
+        {
+            private AuthenticationHeaderValue capturedAuthorizationHeader;
+
+            public bool ReplayNextRequest { get; set; }
+
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (this.ReplayNextRequest && this.capturedAuthorizationHeader != null)
+                {
+                    request.Headers.Authorization = this.capturedAuthorizationHeader;
+                }
+
+                var response = await base.SendAsync(request, cancellationToken);
+
+                this.capturedAuthorizationHeader ??= request.Headers.Authorization;
+
+                return response;
+            }
+        }
+
+        #endregion
+
+        #region Key Rotation Tests
+
+        private const string PrimaryKey = "MNpx/353+rW+pqv8UbRTAtO1yoabl8/RFDAv/615u5w=";
+        private const string SecondaryKey = "YXJld3JzZHJkc2FhcndlZQ==";
+        private const string UnknownKey = "dGhpcyBpcyBhIHRlc3Qga2V5IQ==";
+
+        [Fact]
+        public async Task Request_KeyRotation_AuthorizedWithPrimaryKey()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                PrimaryKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_AuthorizedWithSecondaryKey()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                SecondaryKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_AuthorizedWithSecondaryKey_WithPostBody()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                SecondaryKey);
+
+            var response = await client.PostAsync("api/test", new StringContent("test-content"));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_UnauthorizedWithUnknownKey()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                UnknownKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Request_KeyRotation_UnauthorizedWithWrongAppId()
+        {
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "wrongAppId",
+                PrimaryKey);
+
+            var response = await client.GetAsync("api/test");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task Request_KeyRotation_Authorized_AllHashingMethods(
+            [CombinatorialMemberData(nameof(GetHmacHashingMethods))] HmacHashingMethod hmacHashingMethod,
+            [CombinatorialMemberData(nameof(GetRequestBodyHashingMethods))] RequestBodyHashingMethod requestBodyHashingMethod,
+            [CombinatorialValues(true, false)] bool useSecondaryKey)
+        {
+            var clientKey = useSecondaryKey ? SecondaryKey : PrimaryKey;
+
+            using var client = GetHttpClientWithMultipleKeys(
+                new Dictionary<string, IList<string>> { { "appId", new List<string> { PrimaryKey, SecondaryKey } } },
+                "appId",
+                clientKey,
+                hmacHashingMethod,
+                requestBodyHashingMethod);
+
+            var response = await client.PostAsync("api/test", new StringContent("test-content"));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        #endregion
     }
 }
